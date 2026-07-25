@@ -1,0 +1,6 @@
+{
+  "name": "CBC Full Material & Book Generator",
+  "description": "Complete Competency-Based Curriculum (CBC) generator for students, teachers, and schools. Convert any topic into structured lesson books, teacher guides, student workbooks, assessment rubrics, and printable PDF materials.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
