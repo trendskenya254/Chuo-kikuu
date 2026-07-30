@@ -4,10 +4,12 @@ import { CBCFullBook } from '../types';
 
 interface WorksheetsViewProps {
   book: CBCFullBook;
+  showAnswerKeys?: boolean;
 }
 
-export const WorksheetsView: React.FC<WorksheetsViewProps> = ({ book }) => {
-  const [showAnswers, setShowAnswers] = useState(false);
+export const WorksheetsView: React.FC<WorksheetsViewProps> = ({ book, showAnswerKeys }) => {
+  const [internalShowAnswers, setInternalShowAnswers] = useState(false);
+  const showAnswers = showAnswerKeys !== undefined ? showAnswerKeys : internalShowAnswers;
   const chapter = book.chapters[0];
   if (!chapter) return null;
 
@@ -88,7 +90,7 @@ export const WorksheetsView: React.FC<WorksheetsViewProps> = ({ book }) => {
         </div>
 
         <button
-          onClick={() => setShowAnswers(!showAnswers)}
+          onClick={() => setInternalShowAnswers(!showAnswers)}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer shrink-0 print:hidden ${
             showAnswers
               ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'

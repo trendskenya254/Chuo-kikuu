@@ -4,9 +4,13 @@ import { CheckCircle2, MessageSquare, ShieldCheck, Award, Star, UserCheck, Heart
 
 interface ProgressAndTrackerViewProps {
   book: CBCFullBook;
+  showTeacherRemarks?: boolean;
 }
 
-export const ProgressAndTrackerView: React.FC<ProgressAndTrackerViewProps> = ({ book }) => {
+export const ProgressAndTrackerView: React.FC<ProgressAndTrackerViewProps> = ({
+  book,
+  showTeacherRemarks = true,
+}) => {
   const chapter = book.chapters[0];
   const branding = book.branding;
 
@@ -111,72 +115,74 @@ export const ProgressAndTrackerView: React.FC<ProgressAndTrackerViewProps> = ({ 
       </div>
 
       {/* 2. Teacher Remarks & Parent Feedback Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Teacher Remarks Box */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <UserCheck className="w-5 h-5 text-emerald-600" />
-            <h3 className="text-base font-extrabold text-slate-900 uppercase">
-              2. Teacher's Assessment & Remarks
-            </h3>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            <div>
-              <span className="font-extrabold text-slate-800 uppercase block mb-1">
-                Teacher Name: <span className="text-emerald-700">{branding.teacherName || 'Mwalimu'}</span>
-              </span>
-              <p className="text-slate-600 italic border-l-2 border-emerald-500 pl-3 py-1 bg-emerald-50/50 rounded-r-lg">
-                "The learner demonstrated good understanding of core principles in {book.subject}. Continued practice at home is recommended."
-              </p>
+      {showTeacherRemarks && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Teacher Remarks Box */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+              <UserCheck className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-extrabold text-slate-900 uppercase">
+                2. Teacher's Assessment & Remarks
+              </h3>
             </div>
 
-            <div className="pt-2">
-              <span className="font-extrabold text-slate-800 uppercase block mb-1">General Recommendations / Action Plan:</span>
-              <div className="border border-dashed border-slate-300 rounded-xl p-3 min-h-[80px] text-slate-400 italic">
-                [Teacher feedback, remedial strategies, or encouragement notes...]
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="font-extrabold text-slate-800 uppercase block mb-1">
+                  Teacher Name: <span className="text-emerald-700">{branding.teacherName || 'Mwalimu'}</span>
+                </span>
+                <p className="text-slate-600 italic border-l-2 border-emerald-500 pl-3 py-1 bg-emerald-50/50 rounded-r-lg">
+                  "The learner demonstrated good understanding of core principles in {book.subject}. Continued practice at home is recommended."
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <span className="font-extrabold text-slate-800 uppercase block mb-1">General Recommendations / Action Plan:</span>
+                <div className="border border-dashed border-slate-300 rounded-xl p-3 min-h-[80px] text-slate-400 italic">
+                  [Teacher feedback, remedial strategies, or encouragement notes...]
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[11px]">
+                <span>Sign: __________________________</span>
+                <span>Date: ____/____/20__</span>
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[11px]">
-              <span>Sign: __________________________</span>
-              <span>Date: ____/____/20__</span>
+          {/* Parent / Guardian Feedback Box */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+              <HeartHandshake className="w-5 h-5 text-amber-600" />
+              <h3 className="text-base font-extrabold text-slate-900 uppercase">
+                3. Parent / Guardian Feedback & Signature
+              </h3>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="font-extrabold text-slate-800 uppercase block mb-1">
+                  Home Project & Extended Task Observations:
+                </span>
+                <p className="text-slate-600">
+                  Please comment on how the learner completed the home-based activity with family support:
+                </p>
+              </div>
+
+              <div className="border border-dashed border-slate-300 rounded-xl p-3 min-h-[80px] text-slate-400 italic">
+                [Parent/Guardian feedback, home activity comments, or questions for teacher...]
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[11px]">
+                <span>Parent Sign: __________________________</span>
+                <span>Date: ____/____/20__</span>
+              </div>
             </div>
           </div>
+
         </div>
-
-        {/* Parent / Guardian Feedback Box */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <HeartHandshake className="w-5 h-5 text-amber-600" />
-            <h3 className="text-base font-extrabold text-slate-900 uppercase">
-              3. Parent / Guardian Feedback & Signature
-            </h3>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            <div>
-              <span className="font-extrabold text-slate-800 uppercase block mb-1">
-                Home Project & Extended Task Observations:
-              </span>
-              <p className="text-slate-600">
-                Please comment on how the learner completed the home-based activity with family support:
-              </p>
-            </div>
-
-            <div className="border border-dashed border-slate-300 rounded-xl p-3 min-h-[80px] text-slate-400 italic">
-              [Parent/Guardian feedback, home activity comments, or questions for teacher...]
-            </div>
-
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-[11px]">
-              <span>Parent Sign: __________________________</span>
-              <span>Date: ____/____/20__</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      )}
 
       {/* 3. Official End Page & Publishing Certification */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-8 rounded-3xl border border-slate-800 shadow-xl text-center space-y-6">

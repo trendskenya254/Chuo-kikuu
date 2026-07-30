@@ -17,44 +17,43 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   savedBooksCount,
 }) => {
   const NAV_ITEMS = [
-    { id: 'landing', label: 'Landing Portal', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'library', label: 'Library Home', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'grades', label: 'Grade Portal', icon: <GraduationCap className="w-4 h-4" /> },
-    { id: 'subject', label: 'Subject Hub', icon: <Layers className="w-4 h-4" /> },
-    { id: 'search', label: 'Smart Search', icon: <FileText className="w-4 h-4" /> },
-    { id: 'downloads', label: 'Offline Downloads', icon: <HardDriveDownload className="w-4 h-4" />, badge: savedBooksCount },
-    { id: 'teacher', label: 'Teacher Dashboard', icon: <UserCheck className="w-4 h-4" /> },
-    { id: 'admin', label: 'Admin Dashboard', icon: <ShieldCheck className="w-4 h-4" /> },
+    { id: 'library', label: 'Book Store & Library', icon: <BookOpen className="w-4 h-4 text-emerald-600" /> },
+    { id: 'studio', label: 'AI Book Studio', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
+    { id: 'search', label: 'Search Books', icon: <FileText className="w-4 h-4 text-blue-600" /> },
+    { id: 'downloads', label: 'My Downloads', icon: <HardDriveDownload className="w-4 h-4 text-purple-600" />, badge: savedBooksCount },
+    { id: 'teacher', label: 'Teacher Portal', icon: <UserCheck className="w-4 h-4 text-indigo-600" /> },
   ];
 
   return (
-    <aside className="w-64 shrink-0 hidden lg:block space-y-6 print:hidden">
+    <aside className="hidden md:flex md:flex-col md:w-16 lg:w-64 shrink-0 space-y-6 print:hidden transition-all duration-200">
       
-      {/* AI Generator CTA Banner */}
-      <div className="bg-gradient-to-br from-emerald-800 to-teal-900 text-white p-4 rounded-2xl border border-emerald-700 shadow-md space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-xl border border-emerald-400/30">
+      {/* KES 49 Purchase & AI Generator CTA Banner */}
+      <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white p-2.5 lg:p-4 rounded-2xl border border-emerald-700 shadow-md space-y-3">
+        <div className="hidden lg:flex items-center gap-2">
+          <div className="p-2 bg-amber-400/20 text-amber-300 rounded-xl border border-amber-400/30 shrink-0">
             <Sparkles className="w-4 h-4 text-amber-300" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xs text-white">AI Book Studio</h4>
-            <p className="text-[10px] text-teal-100">Create KICD Book Instantly</p>
+            <h4 className="font-extrabold text-xs text-white">CBC Full Coursebook</h4>
+            <p className="text-[10px] text-amber-300 font-bold">Only KES 49 / Package</p>
           </div>
         </div>
 
         <button
           onClick={onOpenGenerator}
-          className="w-full py-2 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full py-2.5 px-2 lg:px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+          title="Generate & Buy CBC Coursebook (KES 49)"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Generate Material</span>
+          <Sparkles className="w-4 h-4 text-slate-950 shrink-0" />
+          <span className="hidden lg:inline">Generate & Buy Book</span>
         </button>
       </div>
 
       {/* Main Navigation Menu */}
-      <nav className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs space-y-1 text-xs">
-        <div className="px-3 py-2 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-          Platform Navigation
+      <nav className="bg-white rounded-2xl border border-slate-200 p-2 lg:p-3 shadow-2xs space-y-1 text-xs">
+        <div className="hidden lg:flex px-3 py-2 text-[10px] font-black uppercase text-slate-400 tracking-wider justify-between items-center">
+          <span>Main Navigation</span>
+          <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">KES 49 / Book</span>
         </div>
 
         {NAV_ITEMS.map((item) => {
@@ -63,18 +62,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             <button
               key={item.id}
               onClick={() => onNavigateView(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold transition cursor-pointer ${
+              title={item.label}
+              className={`w-full flex items-center justify-center lg:justify-between px-2 lg:px-3 py-2.5 rounded-xl font-bold transition cursor-pointer ${
                 isActive
                   ? 'bg-emerald-700 text-white shadow-xs'
                   : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className={isActive ? 'text-white' : 'text-slate-500'}>{item.icon}</span>
-                <span>{item.label}</span>
+                <span className={isActive ? 'text-white shrink-0' : 'shrink-0'}>{item.icon}</span>
+                <span className="hidden lg:inline">{item.label}</span>
               </div>
               {item.badge !== undefined && (
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full hidden lg:inline-block ${
                   isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
                 }`}>
                   {item.badge}
@@ -87,28 +87,30 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <div className="pt-2 border-t border-slate-100 mt-2">
           <button
             onClick={onOpenBranding}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            title="School Branding Settings"
+            className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-2 lg:px-3 py-2.5 rounded-xl font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
           >
-            <Settings className="w-4 h-4 text-slate-500" />
-            <span>School Branding Settings</span>
+            <Settings className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="hidden lg:inline">School Branding Settings</span>
           </button>
         </div>
       </nav>
 
-      {/* Internal Brain Status Card */}
-      <div className="bg-slate-900 text-slate-300 p-4 rounded-2xl border border-slate-800 text-[11px] space-y-1.5">
+      {/* Instant PesaPal Gateway Status Card */}
+      <div className="hidden lg:block bg-slate-900 text-slate-300 p-4 rounded-2xl border border-slate-800 text-[11px] space-y-1.5">
         <div className="flex items-center justify-between font-bold text-white">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Internal Brain
+            PesaPal Gateway
           </span>
-          <span className="text-[10px] text-emerald-400 font-mono">ONLINE</span>
+          <span className="text-[10px] text-emerald-400 font-mono">ACTIVE</span>
         </div>
         <p className="text-slate-400 text-[10px]">
-          Continuously optimizing educational documents & master copies.
+          M-Pesa, Airtel Money, Visa & Mastercard ready for KES 49 downloads.
         </p>
       </div>
 
     </aside>
   );
 };
+

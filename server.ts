@@ -3,12 +3,16 @@ import path from 'path';
 import { GoogleGenAI, Type } from '@google/genai';
 import { PRESET_CBC_BOOKS } from './src/data/presetBooks';
 import { GenerationRequest, CBCFullBook } from './src/types';
+import { pesapalRouter } from './src/server/pesapal';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // Mount PesaPal Payment Gateway Routes
+  app.use('/api/pesapal', pesapalRouter);
 
   // Shared Gemini client instance
   const getGenAI = () => {

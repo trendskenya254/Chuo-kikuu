@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, UserCheck, GraduationCap, FileText, Printer, Award, Layers, Share2, Check, Download, FileCode, CheckSquare, Square, Eye, EyeOff, Maximize2, Minimize2, Tv, Highlighter, Link2, SlidersHorizontal, Sparkles, MessageSquare, CheckCircle } from 'lucide-react';
+import { BookOpen, UserCheck, GraduationCap, FileText, Printer, Award, Layers, Share2, Check, Download, FileCode, CheckSquare, Square, Eye, EyeOff, Maximize2, Minimize2, Tv, Highlighter, Link2, SlidersHorizontal, Sparkles, MessageSquare, CheckCircle, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { CBCFullBook } from '../types';
 import { CoverPageView } from './CoverPageView';
 import { TeacherGuideView } from './TeacherGuideView';
@@ -10,6 +10,7 @@ import { ExternalResourcesView } from './ExternalResourcesView';
 import { ProgressAndTrackerView } from './ProgressAndTrackerView';
 import { TeacherStickyNotes, PageStickyOverlay } from './TeacherStickyNotes';
 import { AIProcessingProgress } from './AIProcessingProgress';
+import { DownloadPackageModal } from './DownloadPackageModal';
 import { downloadBookAsMarkdown, convertBookToMarkdown } from '../utils/markdownExporter';
 
 interface BookViewerProps {
@@ -35,6 +36,8 @@ export const BookViewer: React.FC<BookViewerProps> = ({
   const [isHighlighterActive, setIsHighlighterActive] = useState(false);
   const [showPrintCustomizer, setShowPrintCustomizer] = useState(false);
   const [showProcessingBanner, setShowProcessingBanner] = useState(book.isProcessing ?? false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false);
 
   // Section visibility state for real-time print preview customization
   const [sections, setSections] = useState({
@@ -47,6 +50,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
     flashcards: true,
     resources: true,
     tracker: true,
+    teacherRemarks: true,
     stickyNotes: true,
   });
 
@@ -59,25 +63,25 @@ export const BookViewer: React.FC<BookViewerProps> = ({
       setSections({
         cover: true, overview: true, teacher: true, student: true,
         worksheets: true, answers: true, flashcards: true, resources: true,
-        tracker: true, stickyNotes: true,
+        tracker: true, teacherRemarks: true, stickyNotes: true,
       });
     } else if (type === 'student') {
       setSections({
         cover: true, overview: true, teacher: false, student: true,
         worksheets: true, answers: false, flashcards: true, resources: true,
-        tracker: false, stickyNotes: false,
+        tracker: false, teacherRemarks: false, stickyNotes: false,
       });
     } else if (type === 'teacher') {
       setSections({
         cover: true, overview: true, teacher: true, student: true,
         worksheets: true, answers: true, flashcards: true, resources: true,
-        tracker: true, stickyNotes: true,
+        tracker: true, teacherRemarks: true, stickyNotes: true,
       });
     } else if (type === 'worksheets') {
       setSections({
         cover: false, overview: false, teacher: false, student: false,
         worksheets: true, answers: false, flashcards: false, resources: false,
-        tracker: false, stickyNotes: false,
+        tracker: false, teacherRemarks: false, stickyNotes: false,
       });
     }
   };
@@ -137,87 +141,17 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0 flex-wrap font-sans">
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0 font-sans">
           
-          {/* Text Highlighter Toggle Button */}
-          <button
-            onClick={() => setIsHighlighterActive(!isHighlighterActive)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-extrabold rounded-xl border transition cursor-pointer shadow-sm ${
-              isHighlighterActive
-                ? 'bg-amber-400 text-slate-950 border-amber-500 ring-2 ring-amber-400/40'
-                : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200'
-            }`}
-            title="Highlight important text paragraphs during live classroom presentations"
-          >
-            <Highlighter className="w-4 h-4 text-amber-700" />
-            <span>{isHighlighterActive ? 'Highlighter ON' : 'Highlighter Tool'}</span>
-          </button>
-
-          {/* Print Section Customizer Toggle */}
-          {activeTab === 'all' && (
-            <button
-              onClick={() => setShowPrintCustomizer(!showPrintCustomizer)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                showPrintCustomizer
-                  ? 'bg-blue-100 text-blue-900 border-blue-400'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-              }`}
-              title="Toggle off specific sections before printing custom handouts"
-            >
-              <SlidersHorizontal className="w-4 h-4 text-blue-600" />
-              <span>Customize Print</span>
-            </button>
-          )}
-
-          {/* Focus Mode Toggle Button */}
-          <button
-            onClick={() => setIsFocusMode(!isFocusMode)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-extrabold rounded-xl border transition cursor-pointer shadow-sm ${
-              isFocusMode
-                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-400'
-                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
-            }`}
-            title="Toggle Classroom Focus / Presentation Mode"
-          >
-            {isFocusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 text-indigo-600" />}
-            <span>{isFocusMode ? 'Exit Focus Mode' : 'Classroom Focus Mode'}</span>
-          </button>
-
-          {!isFocusMode && onToggleQueue && (
-            <button
-              onClick={onToggleQueue}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                isQueued
-                  ? 'bg-blue-50 text-blue-700 border-blue-300'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-              }`}
-              title="Add this coursebook to the batch print queue"
-            >
-              {isQueued ? <CheckSquare className="w-4 h-4 text-blue-600" /> : <Square className="w-4 h-4 text-slate-400" />}
-              <span>{isQueued ? 'In Batch Queue' : 'Add to Queue'}</span>
-            </button>
-          )}
-
           {!isFocusMode && (
-            <>
-              <button
-                onClick={handleCopyMarkdown}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
-                title="Copy entire coursebook as Markdown text"
-              >
-                {copiedMd ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
-                <span>{copiedMd ? 'Copied Markdown' : 'Copy Markdown'}</span>
-              </button>
-
-              <button
-                onClick={handleDownloadMarkdown}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition cursor-pointer"
-                title="Download offline Markdown file (.md)"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export .MD</span>
-              </button>
-            </>
+            <button
+              onClick={() => setShowPackageModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition cursor-pointer"
+              title="Target Book Scope & Edition Selection (Full Book KES 49)"
+            >
+              <Download className="w-4 h-4 text-amber-300" />
+              <span>Download Package (49 KES)</span>
+            </button>
           )}
 
           <button
@@ -229,6 +163,168 @@ export const BookViewer: React.FC<BookViewerProps> = ({
             <Printer className="w-4 h-4" />
             <span>Print / PDF</span>
           </button>
+
+          {/* More Tools & Actions Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setIsToolsDropdownOpen(!isToolsDropdownOpen)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-extrabold rounded-xl border transition cursor-pointer ${
+                isToolsDropdownOpen
+                  ? 'bg-slate-800 text-white border-slate-700'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+              }`}
+              title="More book viewer tools & options"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-600" />
+              <span>More Tools</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isToolsDropdownOpen ? 'rotate-180' : ''}`} />
+
+              {/* Active Indicator Dot if highlighter, customizer or queue is active */}
+              {(isHighlighterActive || showPrintCustomizer || isQueued) && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              )}
+            </button>
+
+            {/* Click Outside Overlay Backdrop */}
+            {isToolsDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsToolsDropdownOpen(false)}
+                />
+
+                {/* Dropdown Content */}
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 p-2 space-y-1 text-slate-800 text-xs animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    Interactive Presentation
+                  </div>
+
+                  {/* Text Highlighter Toggle */}
+                  <button
+                    onClick={() => {
+                      setIsHighlighterActive(!isHighlighterActive);
+                      setIsToolsDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left ${
+                      isHighlighterActive ? 'bg-amber-50 text-amber-900 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Highlighter className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div>
+                        <div className="font-bold">Highlighter Tool</div>
+                        <div className="text-[10px] text-slate-400 font-normal">Highlight text in live class</div>
+                      </div>
+                    </div>
+                    {isHighlighterActive && (
+                      <span className="text-[10px] font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full shrink-0">
+                        ON
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Customize Print */}
+                  <button
+                    onClick={() => {
+                      if (!showPrintCustomizer && activeTab !== 'all') {
+                        setActiveTab('all');
+                      }
+                      setShowPrintCustomizer(!showPrintCustomizer);
+                      setIsToolsDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left ${
+                      showPrintCustomizer ? 'bg-blue-50 text-blue-900 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <SlidersHorizontal className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <div className="font-bold">Customize Print</div>
+                        <div className="text-[10px] text-slate-400 font-normal">Toggle sections before printing</div>
+                      </div>
+                    </div>
+                    {showPrintCustomizer && (
+                      <span className="text-[10px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-full shrink-0">
+                        OPEN
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Classroom Focus Mode */}
+                  <button
+                    onClick={() => {
+                      setIsFocusMode(!isFocusMode);
+                      setIsToolsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition cursor-pointer text-left"
+                  >
+                    {isFocusMode ? <Minimize2 className="w-4 h-4 text-indigo-600 shrink-0" /> : <Maximize2 className="w-4 h-4 text-indigo-600 shrink-0" />}
+                    <div>
+                      <div className="font-bold">{isFocusMode ? 'Exit Focus Mode' : 'Classroom Focus Mode'}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">Full screen presentation view</div>
+                    </div>
+                  </button>
+
+                  {/* Batch Queue */}
+                  {!isFocusMode && onToggleQueue && (
+                    <button
+                      onClick={() => {
+                        onToggleQueue();
+                        setIsToolsDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left ${
+                        isQueued ? 'bg-emerald-50 text-emerald-900 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {isQueued ? <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" /> : <Square className="w-4 h-4 text-slate-400 shrink-0" />}
+                        <div>
+                          <div className="font-bold">{isQueued ? 'In Batch Queue' : 'Add to Queue'}</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Queue for multi-book printing</div>
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  <div className="border-t border-slate-100 my-1" />
+                  <div className="px-3 py-1 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    Export & Share
+                  </div>
+
+                  {/* Copy Markdown */}
+                  <button
+                    onClick={() => {
+                      handleCopyMarkdown();
+                      setIsToolsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition cursor-pointer text-left"
+                  >
+                    {copiedMd ? <Check className="w-4 h-4 text-emerald-600 shrink-0" /> : <Share2 className="w-4 h-4 text-purple-600 shrink-0" />}
+                    <div>
+                      <div className="font-bold">{copiedMd ? 'Copied MD to Clipboard' : 'Copy as Markdown'}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">Copy raw text content</div>
+                    </div>
+                  </button>
+
+                  {/* Export .MD File */}
+                  <button
+                    onClick={() => {
+                      handleDownloadMarkdown();
+                      setIsToolsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 text-slate-700 transition cursor-pointer text-left"
+                  >
+                    <FileCode className="w-4 h-4 text-slate-600 shrink-0" />
+                    <div>
+                      <div className="font-bold">Export .MD File</div>
+                      <div className="text-[10px] text-slate-400 font-normal">Download offline markdown file</div>
+                    </div>
+                  </button>
+
+                </div>
+              </>
+            )}
+          </div>
 
         </div>
 
@@ -317,7 +413,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs font-bold">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 text-xs font-bold">
             {[
               { key: 'cover' as const, label: '1. Cover Page' },
               { key: 'overview' as const, label: '2. Table of Contents' },
@@ -327,8 +423,9 @@ export const BookViewer: React.FC<BookViewerProps> = ({
               { key: 'answers' as const, label: '6. Answer Keys' },
               { key: 'flashcards' as const, label: '7. Flashcards' },
               { key: 'resources' as const, label: '8. Resources & Drawings' },
-              { key: 'tracker' as const, label: '9. Progress & Remarks' },
-              { key: 'stickyNotes' as const, label: '10. Sticky Teacher Notes' },
+              { key: 'tracker' as const, label: '9. Progress Tracker' },
+              { key: 'teacherRemarks' as const, label: '10. Teacher Remarks' },
+              { key: 'stickyNotes' as const, label: '11. Sticky Teacher Notes' },
             ].map((sec) => {
               const isChecked = sections[sec.key];
               return (
@@ -461,7 +558,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
             {sections.worksheets && (
               <div className="relative page-break-after-always">
                 <PageStickyOverlay bookId={book.id} sectionName="Page 4 - Worksheets & Quiz" />
-                <WorksheetsView book={book} />
+                <WorksheetsView book={book} showAnswerKeys={sections.answers} />
               </div>
             )}
 
@@ -484,7 +581,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
             {sections.tracker && (
               <div className="relative page-break-after-always">
                 <PageStickyOverlay bookId={book.id} sectionName="Page 6 - Remarks & Tracker" />
-                <ProgressAndTrackerView book={book} />
+                <ProgressAndTrackerView book={book} showTeacherRemarks={sections.teacherRemarks} />
               </div>
             )}
 
@@ -519,7 +616,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         {activeTab === 'worksheets' && (
           <div className="relative">
             <PageStickyOverlay bookId={book.id} sectionName="Page 4 - Worksheets & Quiz" />
-            <WorksheetsView book={book} />
+            <WorksheetsView book={book} showAnswerKeys={sections.answers} />
           </div>
         )}
         {activeTab === 'flashcards' && (
@@ -532,12 +629,23 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         {activeTab === 'tracker' && (
           <div className="space-y-6 relative">
             <PageStickyOverlay bookId={book.id} sectionName="Page 6 - Remarks & Tracker" />
-            <ProgressAndTrackerView book={book} />
+            <ProgressAndTrackerView book={book} showTeacherRemarks={sections.teacherRemarks} />
             <TeacherStickyNotes book={book} />
           </div>
         )}
 
       </div>
+
+      {/* Target Book Scope & Edition Download Package Modal */}
+      <DownloadPackageModal
+        book={book}
+        isOpen={showPackageModal}
+        onClose={() => setShowPackageModal(false)}
+        onPrintScope={(scope) => {
+          applyPreset(scope === 'teacher' ? 'teacher' : scope === 'student' ? 'student' : scope === 'assessment' ? 'worksheets' : 'all');
+          setTimeout(() => window.print(), 300);
+        }}
+      />
 
     </div>
   );

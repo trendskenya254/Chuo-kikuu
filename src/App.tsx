@@ -14,9 +14,10 @@ import { BookGeneratorForm } from './components/BookGeneratorForm';
 import { BookViewer } from './components/BookViewer';
 import { BrandingModal } from './components/BrandingModal';
 import { PrintQueueModal } from './components/PrintQueueModal';
+import { PurchaseAccessModal } from './components/PurchaseAccessModal';
 import { PRESET_CBC_BOOKS } from './data/presetBooks';
-import { CBCFullBook, SchoolBranding, GenerationRequest } from './types';
-import { AlertCircle, Plus, Printer, ArrowLeft, Database, BookOpen } from 'lucide-react';
+import { CBCFullBook, SchoolBranding, GenerationRequest, TargetAudience } from './types';
+import { AlertCircle, Plus, Printer, ArrowLeft, Database, BookOpen, Sparkles, CheckCircle2, ShieldCheck, Download, CreditCard } from 'lucide-react';
 import {
   getAllStoredBooks,
   saveBookToOfflineStorage,
@@ -29,7 +30,7 @@ export default function App() {
   const [currentBook, setCurrentBook] = useState<CBCFullBook | null>(PRESET_CBC_BOOKS[0] || null);
   
   // Navigation active view state
-  const [activeView, setActiveView] = useState<string>('landing');
+  const [activeView, setActiveView] = useState<string>('library');
 
   const [branding, setBranding] = useState<SchoolBranding>({
     schoolName: 'CHUO KIKUU ACADEMY',
@@ -56,6 +57,18 @@ export default function App() {
 
   // Offline IndexedDB status state
   const [offlineStoredCount, setOfflineStoredCount] = useState<number>(0);
+
+  // Purchase Access Modal state (PesaPal KES 49 Gateway)
+  const [purchaseBook, setPurchaseBook] = useState<CBCFullBook | null>(null);
+  const [purchaseInitialScope, setPurchaseInitialScope] = useState<TargetAudience | undefined>(undefined);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [purchaseNotice, setPurchaseNotice] = useState<{ bookTitle: string; receipt: string } | null>(null);
+
+  const handleOpenPurchaseModal = (book: CBCFullBook, scope?: TargetAudience) => {
+    setPurchaseBook(book);
+    setPurchaseInitialScope(scope);
+    setIsPurchaseModalOpen(true);
+  };
 
   // Fetch preset books and load IndexedDB library on mount
   useEffect(() => {
@@ -89,9 +102,30 @@ export default function App() {
 
         await saveBooksToOfflineStorage(mergedList);
         setOfflineStoredCount(mergedList.length);
+
+        // Check for PesaPal payment return parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentParam = urlParams.get('payment');
+        const trackingIdParam = urlParams.get('trackingId');
+        const bookIdParam = urlParams.get('bookId');
+
+        if (paymentParam === 'success' || trackingIdParam) {
+          const matchedBook = mergedList.find((b) => b.id === bookIdParam) || mergedList[0];
+          if (matchedBook) {
+            setCurrentBook(matchedBook);
+            setActiveView('reader');
+            const receipt = trackingIdParam ? `PESAPAL-${trackingIdParam}` : `PESAPAL-${Date.now().toString().slice(-6)}`;
+            localStorage.setItem(`cbc_paid_book_${matchedBook.id}`, receipt);
+            setPurchaseNotice({
+              bookTitle: matchedBook.title,
+              receipt,
+            });
+          }
+        }
       } catch (e) {
         console.error('IndexedDB initialization error:', e);
       }
+
     }
 
     initLibrary();
@@ -134,6 +168,12 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveNewBook = async (newBook: CBCFullBook) => {
+    setSavedBooks((prev) => [newBook, ...prev]);
+    await saveBookToOfflineStorage(newBook);
+    setOfflineStoredCount((prev) => prev + 1);
   };
 
   const handleSaveBranding = async (updatedBranding: SchoolBranding) => {
@@ -211,6 +251,67 @@ export default function App() {
 
         {/* Primary Content View Area */}
         <main className="flex-1 min-w-0 space-y-6">
+          
+          {/* Payment Success Purchase Access Verified Banner */}
+          {purchaseNotice && (
+            <div className="p-5 bg-gradient-to-r from-emerald-900 to-teal-900 text-white border-2 border-emerald-500 rounded-2xl flex items-center justify-between gap-4 shadow-xl animate-in slide-in-from-top duration-300 print:hidden">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-emerald-500/30 text-emerald-300 rounded-xl border border-emerald-400/40">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                      PesaPal Payment Verified
+                    </span>
+                    <span className="text-xs text-emerald-200 font-mono font-bold">{purchaseNotice.receipt}</span>
+                  </div>
+                  <h3 className="font-black text-sm text-white mt-1">
+                    Full Download & Printable Access Unlocked for "{purchaseNotice.bookTitle}"
+                  </h3>
+                  <p className="text-xs text-teal-100 font-medium">
+                    Your payment of KES 49 was confirmed via PesaPal Gateway. You can now download or print all editions.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPurchaseNotice(null)}
+                className="text-xs font-black text-teal-200 hover:text-white px-3 py-1.5 bg-emerald-950/80 rounded-xl border border-emerald-700/50 cursor-pointer shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Persistent Purchase Access Callout Banner when a coursebook is loaded */}
+          {currentBook && activeView === 'reader' && (
+            <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-400/20 text-amber-300 rounded-xl border border-amber-400/30">
+                  <ShieldCheck className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-white">Full A4 PDF Package Download Access</span>
+                    <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md">
+                      KES 49 Only
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    Get full high-resolution printable PDF editions for {currentBook.grade} {currentBook.subject}.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleOpenPurchaseModal(currentBook)}
+                className="w-full sm:w-auto px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Purchase Download Access (KES 49)</span>
+              </button>
+            </div>
+          )}
           
           {/* Error Alert Box */}
           {error && (
@@ -327,7 +428,28 @@ export default function App() {
                   onSelectBook={handleSelectBookAndRead}
                   onOpenGenerator={() => setIsGeneratorOpen(true)}
                   onNavigateView={setActiveView}
+                  onOpenPurchase={handleOpenPurchaseModal}
                 />
+              )}
+
+              {activeView === 'studio' && (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white p-6 rounded-2xl border border-teal-800 shadow-md flex items-center justify-between">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-widest mb-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" /> AI Education Book Studio
+                      </div>
+                      <h2 className="text-2xl font-black text-white">Generate Curriculum Learning Material</h2>
+                      <p className="text-xs text-teal-100 mt-1">Synthesize KICD-aligned textbooks, holiday homework workbooks, teacher lesson plans, and topical exam kits.</p>
+                    </div>
+                  </div>
+                  <BookGeneratorForm
+                    branding={branding}
+                    onGenerate={handleGenerateBook}
+                    isLoading={isLoading}
+                    onClose={() => setActiveView('library')}
+                  />
+                </div>
               )}
 
               {activeView === 'grades' && (
@@ -349,6 +471,7 @@ export default function App() {
                 <SmartSearchView
                   books={savedBooks}
                   onSelectBook={handleSelectBookAndRead}
+                  onSaveBook={handleSaveNewBook}
                   initialQuery={searchQuery}
                 />
               )}
@@ -431,6 +554,22 @@ export default function App() {
         onClearQueue={handleClearQueue}
         onOpenCombinedView={() => setIsCombinedPrintView(true)}
         onDeleteBook={handleDeleteBook}
+      />
+
+      <PurchaseAccessModal
+        book={purchaseBook}
+        isOpen={isPurchaseModalOpen}
+        initialScope={purchaseInitialScope}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        onPaymentSuccess={(bookId, receipt) => {
+          const matched = savedBooks.find((b) => b.id === bookId);
+          if (matched) {
+            setPurchaseNotice({
+              bookTitle: matched.title,
+              receipt,
+            });
+          }
+        }}
       />
 
       {/* Footer Bar */}
