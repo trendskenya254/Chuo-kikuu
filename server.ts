@@ -4,6 +4,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { PRESET_CBC_BOOKS } from './src/data/presetBooks';
 import { GenerationRequest, CBCFullBook } from './src/types';
 import { pesapalRouter } from './src/server/pesapal';
+import { CBCBookPackager, convertPackagedEntryToFullBook } from './src/lib/cbcBookPackager';
 
 async function startServer() {
   const app = express();
@@ -38,6 +39,36 @@ async function startServer() {
   // API Route: Fetch Preset CBC Books
   app.get('/api/cbc/presets', (req, res) => {
     res.json({ success: true, data: PRESET_CBC_BOOKS });
+  });
+
+  // API Route: CBC Curriculum Book Packager & Marketplace Launch Engine
+  app.get('/api/cbc/package-and-launch', (req, res) => {
+    try {
+      const packager = new CBCBookPackager();
+      const launchManifest = packager.package_and_launch();
+      res.json({
+        success: true,
+        manifest: launchManifest,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to execute CBC Book Packager launch.', details: err?.message });
+    }
+  });
+
+  // API Route: Fetch Full Catalog Convert to Books
+  app.get('/api/cbc/catalog-books', (req, res) => {
+    try {
+      const packager = new CBCBookPackager();
+      const catalog = packager.generate_book_catalog();
+      const fullBooks = catalog.map(convertPackagedEntryToFullBook);
+      res.json({
+        success: true,
+        total: fullBooks.length,
+        data: fullBooks,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to convert catalog entries.', details: err?.message });
+    }
   });
 
   // API Route: Generate CBC Full Book via Gemini

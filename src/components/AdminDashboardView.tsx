@@ -1,15 +1,17 @@
 import React from 'react';
-import { ShieldCheck, Server, Database, Cpu, Users, BookOpen, HardDrive, AlertTriangle, Activity, Settings, FileCheck } from 'lucide-react';
+import { ShieldCheck, Server, Database, Cpu, Users, BookOpen, HardDrive, AlertTriangle, Activity, Settings, FileCheck, Rocket, Package, Zap } from 'lucide-react';
 import { CBCFullBook } from '../types';
 
 interface AdminDashboardViewProps {
   books: CBCFullBook[];
   offlineCount: number;
+  onOpenPackager?: () => void;
 }
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   books,
   offlineCount,
+  onOpenPackager,
 }) => {
   return (
     <div className="space-y-6">

@@ -5,9 +5,17 @@ import { RenderMarkdown } from '../lib/markdown';
 
 interface StudentTextbookViewProps {
   book: CBCFullBook;
+  isSimpleEnglishMode?: boolean;
+  fontStyle?: 'sans' | 'serif' | 'mono';
+  fontSize?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const StudentTextbookView: React.FC<StudentTextbookViewProps> = ({ book }) => {
+export const StudentTextbookView: React.FC<StudentTextbookViewProps> = ({
+  book,
+  isSimpleEnglishMode = false,
+  fontStyle = 'sans',
+  fontSize = 'md',
+}) => {
   const chapter = book.chapters[0];
   if (!chapter) return null;
 
@@ -177,15 +185,52 @@ export const StudentTextbookView: React.FC<StudentTextbookViewProps> = ({ book }
 
       {/* Main Textbook Reading Sections */}
       <div className="space-y-6">
+        {isSimpleEnglishMode && (
+          <div className="bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 text-white p-4 rounded-2xl border border-amber-300 shadow-md flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black shrink-0 text-xl">
+                💡
+              </div>
+              <div>
+                <h4 className="font-black text-white text-sm">Student Simple English Explanatory Mode Active</h4>
+                <p className="text-amber-100 text-[11px] font-medium">
+                  Complex KICD curriculum terminology is simplified into student-friendly explanations with real-world examples.
+                </p>
+              </div>
+            </div>
+            <span className="bg-white text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shrink-0 shadow-xs">
+              Simple English Mode
+            </span>
+          </div>
+        )}
+
         {chapter.textbookContent?.map((section, idx) => (
           <div key={idx} className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-5">
             
-            <div className="border-b border-slate-200 pb-3">
+            <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
               <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <Bookmark className="w-5 h-5 text-emerald-600" />
                 {section.sectionTitle}
               </h3>
+              {isSimpleEnglishMode && (
+                <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2.5 py-1 rounded-md border border-amber-300">
+                  Easy Read Active
+                </span>
+              )}
             </div>
+
+            {/* Simple English Summary Callout for Learners */}
+            {isSimpleEnglishMode && (
+              <div className="bg-blue-50/80 border-2 border-blue-200 rounded-2xl p-4 space-y-1.5 text-xs text-blue-950">
+                <div className="font-black text-blue-900 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span>In Simple Words for Grade Level Learners:</span>
+                </div>
+                <p className="font-medium text-slate-800 leading-relaxed">
+                  In this topic, you will learn how <strong>{section.sectionTitle}</strong> works in real life. Keep an eye out for practical examples in your home and environment!
+                </p>
+              </div>
+            )}
 
             {/* Markdown Body Content */}
             <div className="prose prose-slate max-w-none text-slate-800">
@@ -213,16 +258,28 @@ export const StudentTextbookView: React.FC<StudentTextbookViewProps> = ({ book }
 
             {/* Key Vocabulary Table / Cards */}
             {section.keyVocabulary && section.keyVocabulary.length > 0 && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2 flex items-center gap-1.5">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-emerald-600" />
-                  Key Vocabulary & Definitions:
+                  Key Vocabulary & Simple Definitions:
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {section.keyVocabulary.map((vocab, vIdx) => (
-                    <div key={vIdx} className="bg-white p-2.5 rounded-lg border border-slate-200 text-xs">
-                      <strong className="text-emerald-800 block font-bold">{vocab.term}:</strong>
-                      <span className="text-slate-600 leading-tight block mt-0.5">{vocab.definition}</span>
+                    <div key={vIdx} className="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-1 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-emerald-800 font-black text-sm">{vocab.term}</strong>
+                        {isSimpleEnglishMode && (
+                          <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                            Easy Definition
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-700 leading-normal block">{vocab.definition}</span>
+                      {isSimpleEnglishMode && (
+                        <div className="text-[11px] text-blue-900 bg-blue-50/70 p-1.5 rounded-lg border border-blue-100 font-medium mt-1">
+                          👉 <em>Simple Meaning:</em> Think of <strong>{vocab.term}</strong> as something you see or use every day!
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

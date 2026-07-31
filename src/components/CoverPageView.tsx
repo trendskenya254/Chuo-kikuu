@@ -1,13 +1,40 @@
 import React from 'react';
 import { GraduationCap, Award, BookOpen, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
-import { CBCFullBook } from '../types';
+import { CBCFullBook, TargetAudience } from '../types';
 
 interface CoverPageViewProps {
   book: CBCFullBook;
+  targetScope?: TargetAudience;
 }
 
-export const CoverPageView: React.FC<CoverPageViewProps> = ({ book }) => {
+export const CoverPageView: React.FC<CoverPageViewProps> = ({ book, targetScope }) => {
   const { branding, grade, subject, title, strand, subStrand } = book;
+  const activeScope: TargetAudience = targetScope || book.targetAudience || 'Full Book';
+
+  const scopeConfig: Record<TargetAudience, { badge: string; label: string; icon: string }> = {
+    'Full Book': {
+      badge: 'border-emerald-400/60 text-emerald-300 bg-emerald-950/80',
+      label: '📘 FULL COURSEBOOK EDITION',
+      icon: '📘',
+    },
+    'Teacher Edition': {
+      badge: 'border-blue-400/60 text-blue-300 bg-blue-950/80',
+      label: '👨‍🏫 TEACHER GUIDE & SCHEMES EDITION',
+      icon: '👨‍🏫',
+    },
+    'Student Edition': {
+      badge: 'border-indigo-400/60 text-indigo-300 bg-indigo-950/80',
+      label: '🎓 STUDENT TEXTBOOK EDITION',
+      icon: '🎓',
+    },
+    'School Assessment': {
+      badge: 'border-amber-400/60 text-amber-300 bg-amber-950/80',
+      label: '📝 SCHOOL ASSESSMENT & EXAM KIT',
+      icon: '📝',
+    },
+  };
+
+  const currentScopeInfo = scopeConfig[activeScope] || scopeConfig['Full Book'];
 
   const themeClasses: Record<string, { bg: string; text: string; border: string; accent: string; badge: string }> = {
     emerald: {
@@ -60,8 +87,19 @@ export const CoverPageView: React.FC<CoverPageViewProps> = ({ book }) => {
 
         {/* Top Header: School Info & Crest */}
         <div className="text-center space-y-3 z-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-inner mb-2">
-            <GraduationCap className="w-10 h-10 text-white" />
+          
+          {/* Target Booklet Scope Banner Pill */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-white/25 shadow-md mb-1">
+            <span className="text-sm">{currentScopeInfo.icon}</span>
+            <span className="text-xs font-black tracking-widest uppercase text-amber-300">
+              {currentScopeInfo.label}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-inner">
+              <GraduationCap className="w-9 h-9 text-amber-300" />
+            </div>
           </div>
 
           <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase text-white drop-shadow-sm">

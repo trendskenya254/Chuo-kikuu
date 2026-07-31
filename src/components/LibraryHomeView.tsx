@@ -8,6 +8,7 @@ interface LibraryHomeViewProps {
   onOpenGenerator: () => void;
   onNavigateView: (view: string) => void;
   onOpenPurchase?: (book: CBCFullBook, scope?: TargetAudience) => void;
+  onOpenPackager?: () => void;
 }
 
 // Target Book Scope & Edition Definitions
@@ -152,11 +153,12 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
   onOpenGenerator,
   onNavigateView,
   onOpenPurchase,
+  onOpenPackager,
 }) => {
   const [selectedSubjectTab, setSelectedSubjectTab] = useState<string>('all');
   const [selectedEditionTab, setSelectedEditionTab] = useState<string>('all');
   const [selectedGrade, setSelectedGrade] = useState<string>('All');
-  const [viewMode, setViewMode] = useState<'grouped' | 'grid'>('grouped');
+  const [viewMode, setViewMode] = useState<'grouped' | 'subject' | 'grid'>('grouped');
   const [editionModalBook, setEditionModalBook] = useState<CBCFullBook | null>(null);
 
   const FEATURED_COLLECTIONS = [
@@ -165,6 +167,49 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
     { id: 'student', title: 'Student Textbooks', desc: 'Core Concept Explanations', icon: '📗', color: 'bg-blue-50 text-blue-900 border-blue-200' },
     { id: 'revision', title: 'Revision & Exam Kits', desc: 'Topical CATs & Marking Keys', icon: '📕', color: 'bg-rose-50 text-rose-900 border-rose-200' },
   ];
+
+  // Extract all unique available grades dynamically from books
+  const availableGrades = useMemo(() => {
+    const set = new Set<string>();
+    books.forEach((b) => {
+      if (b.grade) set.add(b.grade);
+    });
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    );
+  }, [books]);
+
+  // Group books by Grade Header -> Subject Sub-header
+  const gradeSubjectGroups = useMemo(() => {
+    const groups: Record<string, Record<string, CBCFullBook[]>> = {};
+
+    books.forEach((book) => {
+      // Grade filter
+      if (selectedGrade !== 'All' && book.grade !== selectedGrade) {
+        return;
+      }
+      // Target Edition filter
+      if (selectedEditionTab !== 'all' && book.targetAudience && book.targetAudience !== selectedEditionTab) {
+        // Allow matching if book scope is present
+      }
+      // Subject filter
+      const subjectKey = getSubjectThemeKey(book.subject);
+      if (selectedSubjectTab !== 'all' && selectedSubjectTab !== subjectKey) {
+        return;
+      }
+
+      const gradeKey = book.grade || 'General Curriculum';
+      if (!groups[gradeKey]) {
+        groups[gradeKey] = {};
+      }
+      if (!groups[gradeKey][subjectKey]) {
+        groups[gradeKey][subjectKey] = [];
+      }
+      groups[gradeKey][subjectKey].push(book);
+    });
+
+    return groups;
+  }, [books, selectedGrade, selectedSubjectTab, selectedEditionTab]);
 
   // Subject Counts & Categorization
   const subjectGroups = useMemo(() => {
@@ -183,10 +228,6 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
       if (selectedGrade !== 'All' && book.grade !== selectedGrade) {
         return;
       }
-      // Target Edition filter
-      if (selectedEditionTab !== 'all' && book.targetAudience && book.targetAudience !== selectedEditionTab) {
-        // If filter is specific, still match if book contains the target edition content
-      }
       const key = getSubjectThemeKey(book.subject);
       if (groups[key]) {
         groups[key].push(book);
@@ -196,9 +237,9 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
     });
 
     return groups;
-  }, [books, selectedGrade, selectedEditionTab]);
+  }, [books, selectedGrade]);
 
-  // Filtered Flat List for Grid View or Selected Subject Tab
+  // Filtered Flat List for Grid View
   const filteredBooks = useMemo(() => {
     return books.filter((b) => {
       const matchesGrade = selectedGrade === 'All' || b.grade === selectedGrade;
@@ -213,7 +254,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
       
       {/* Top Banner / Welcome */}
       <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-teal-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
+        <div className="space-y-2 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-widest">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             Internal Education Brain • Library Portal
@@ -222,17 +263,9 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
             Digital Curriculum Library & Resource Hub
           </h1>
           <p className="text-xs sm:text-sm text-teal-100 font-medium">
-            Browse through national curriculum coursebooks with automatic Target Scope & Edition generation (Full Book, Teacher, Student, & Assessment).
+            Browse through official national KICD Competency-Based Curriculum coursebooks with instant preview and M-Pesa unlock across all 4 target editions (Full Book, Teacher, Student, & Assessment).
           </p>
         </div>
-
-        <button
-          onClick={onOpenGenerator}
-          className="px-5 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg transition shrink-0 flex items-center gap-2 cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Generate New Coursebook</span>
-        </button>
       </div>
 
       {/* TARGET BOOK SCOPE & EDITION BANNER BAR */}
@@ -252,10 +285,13 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
           </div>
 
           {/* Edition Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs" role="tablist" aria-label="Target Book Scopes">
             <button
+              type="button"
+              role="tab"
+              aria-selected={selectedEditionTab === 'all'}
               onClick={() => setSelectedEditionTab('all')}
-              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-xl font-extrabold transition cursor-pointer whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 selectedEditionTab === 'all'
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -265,9 +301,13 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
             </button>
             {TARGET_EDITIONS.map((ed) => (
               <button
+                type="button"
+                role="tab"
                 key={ed.id}
+                aria-selected={selectedEditionTab === ed.id}
+                aria-label={`Filter by ${ed.title}`}
                 onClick={() => setSelectedEditionTab(ed.id)}
-                className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1 border ${
+                className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1 border focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                   selectedEditionTab === ed.id
                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                     : `${ed.border} text-slate-800 hover:shadow-xs`
@@ -282,30 +322,86 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
 
         {/* 4 Edition Cards Summary Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {TARGET_EDITIONS.map((ed) => (
-            <div
-              key={ed.id}
-              onClick={() => setSelectedEditionTab(ed.id)}
-              className={`p-3.5 rounded-2xl border transition cursor-pointer space-y-1.5 hover:shadow-md ${ed.border}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                  <span className="text-lg">{ed.icon}</span>
-                  <span>{ed.title}</span>
-                </span>
-                <span className="text-[10px] font-black bg-white px-2 py-0.5 rounded-full border border-slate-200 text-slate-700 shadow-2xs">
-                  {ed.price}
-                </span>
-              </div>
-              <div className={`text-[10px] font-black px-2 py-0.5 rounded-md border w-fit ${ed.badge}`}>
-                {ed.breakdown}
-              </div>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                {ed.description}
-              </p>
-            </div>
-          ))}
+          {TARGET_EDITIONS.map((ed) => {
+            const isSelected = selectedEditionTab === ed.id;
+            return (
+              <button
+                type="button"
+                key={ed.id}
+                aria-pressed={isSelected}
+                aria-label={`Select ${ed.title} edition`}
+                onClick={() => {
+                  setSelectedEditionTab(ed.id);
+                  if (books.length > 0) {
+                    setEditionModalBook(books[0]);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedEditionTab(ed.id);
+                    if (books.length > 0) {
+                      setEditionModalBook(books[0]);
+                    }
+                  }
+                }}
+                className={`text-left p-4 rounded-2xl border transition cursor-pointer space-y-2 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                  isSelected
+                    ? 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/80 shadow-md'
+                    : `${ed.border} hover:shadow-md hover:border-slate-300`
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <span className="text-lg" aria-hidden="true">{ed.icon}</span>
+                    <span>{ed.title}</span>
+                  </span>
+                  <span className="text-[10px] font-black bg-white px-2 py-0.5 rounded-full border border-slate-200 text-slate-800 shadow-2xs">
+                    {ed.price}
+                  </span>
+                </div>
+
+                <div className={`text-[10px] font-black px-2 py-0.5 rounded-md border w-fit ${ed.badge}`}>
+                  {ed.breakdown}
+                </div>
+
+                <p className="text-[11px] text-slate-600 font-medium leading-tight">
+                  {ed.description}
+                </p>
+
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold text-emerald-700">
+                  <span className="flex items-center gap-1">
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                    <span>{isSelected ? 'Active Scope Filter' : 'Click to Explore'}</span>
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Active Scope Filter Banner Notification */}
+        {selectedEditionTab !== 'all' && (
+          <div className="bg-slate-900 text-white p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="text-base">
+                {TARGET_EDITIONS.find((e) => e.id === selectedEditionTab)?.icon}
+              </span>
+              <span>
+                Filtering library by: <strong>{selectedEditionTab}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedEditionTab('all')}
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              <span>Clear Filter</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Quick Metrics Cards */}
@@ -379,13 +475,13 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <span>Academic Library by Subject</span>
+              <span>Academic Library by Grade & Subject</span>
               <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Color Categorized
+                Class Grouped
               </span>
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Select color-coded subject tabs to filter topics or switch to Grouped View for automatic subject categorization.
+              Books are automatically grouped by Grade and Subject headers for quick class curriculum access.
             </p>
           </div>
 
@@ -393,22 +489,35 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
             {/* View Mode Toggle */}
             <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200 text-xs">
               <button
-                onClick={() => {
-                  setViewMode('grouped');
-                  setSelectedSubjectTab('all');
-                }}
+                type="button"
+                onClick={() => setViewMode('grouped')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
                   viewMode === 'grouped'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
-                title="Group books by visual subject cards"
+                title="Automatically group books by Grade & Subject headers"
               >
-                <LayoutList className="w-3.5 h-3.5" />
-                <span>Grouped View</span>
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Grade & Subject</span>
               </button>
 
               <button
+                type="button"
+                onClick={() => setViewMode('subject')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                  viewMode === 'subject'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Group books by subject categories"
+              >
+                <LayoutList className="w-3.5 h-3.5 text-blue-600" />
+                <span>By Subject</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setViewMode('grid')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
                   viewMode === 'grid'
@@ -417,7 +526,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                 }`}
                 title="View books in flat responsive grid"
               >
-                <Grid className="w-3.5 h-3.5" />
+                <Grid className="w-3.5 h-3.5 text-slate-600" />
                 <span>Grid View</span>
               </button>
             </div>
@@ -428,68 +537,289 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
               onChange={(e) => setSelectedGrade(e.target.value)}
               className="bg-white border border-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
             >
-              <option value="All">All Grades</option>
-              <option value="Grade 4">Grade 4</option>
-              <option value="Grade 5">Grade 5</option>
-              <option value="Grade 6">Grade 6</option>
+              <option value="All">All Grades ({books.length})</option>
+              {availableGrades.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
             </select>
           </div>
         </div>
 
-        {/* Color-Coded Subject Tab Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
-          {/* ALL SUBJECTS TAB */}
-          <button
-            onClick={() => {
-              setSelectedSubjectTab('all');
-              if (viewMode === 'grid') setViewMode('grouped');
-            }}
-            className={`px-4 py-2.5 rounded-2xl font-black transition cursor-pointer shrink-0 flex items-center gap-2 ${
-              selectedSubjectTab === 'all'
-                ? 'bg-slate-900 text-white shadow-md ring-2 ring-slate-400/40'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <span>📚 All Subjects</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              selectedSubjectTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-            }`}>
-              {books.length}
-            </span>
-          </button>
+        {/* Quick Filter Bar: Grade Pills + Subject Color Tabs */}
+        <div className="space-y-3">
+          {/* GRADE QUICK PILLS */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <span className="text-[11px] font-black uppercase text-slate-400 shrink-0 mr-1">Grade Level:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedGrade('All')}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition cursor-pointer shrink-0 ${
+                selectedGrade === 'All'
+                  ? 'bg-emerald-800 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              All Grades
+            </button>
+            {availableGrades.map((g) => {
+              const count = books.filter((b) => b.grade === g).length;
+              const isSelected = selectedGrade === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setSelectedGrade(g)}
+                  className={`px-3 py-1.5 rounded-xl font-black transition cursor-pointer shrink-0 flex items-center gap-1.5 border ${
+                    isSelected
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{g}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* DYNAMIC SUBJECT COLOR TABS */}
-          {Object.entries(SUBJECT_THEMES).map(([key, theme]) => {
-            const count = subjectGroups[key]?.length || 0;
-            const isSelected = selectedSubjectTab === key;
+          {/* COLOR-CODED SUBJECT TABS */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedSubjectTab('all')}
+              className={`px-4 py-2 rounded-2xl font-black transition cursor-pointer shrink-0 flex items-center gap-2 ${
+                selectedSubjectTab === 'all'
+                  ? 'bg-slate-900 text-white shadow-md ring-2 ring-slate-400/40'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <span>📚 All Subjects</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                selectedSubjectTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+              }`}>
+                {books.length}
+              </span>
+            </button>
 
-            return (
-              <button
-                key={key}
-                onClick={() => {
-                  setSelectedSubjectTab(key);
-                  setViewMode('grid');
-                }}
-                className={`px-4 py-2.5 rounded-2xl font-black transition cursor-pointer shrink-0 flex items-center gap-2 border ${
-                  isSelected
-                    ? theme.activeTab
-                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <span className="text-base">{theme.icon}</span>
-                <span>{theme.name}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                  isSelected ? 'bg-white/20 text-white border-white/30' : theme.badge
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+            {Object.entries(SUBJECT_THEMES).map(([key, theme]) => {
+              const count = subjectGroups[key]?.length || 0;
+              const isSelected = selectedSubjectTab === key;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedSubjectTab(key)}
+                  className={`px-4 py-2 rounded-2xl font-black transition cursor-pointer shrink-0 flex items-center gap-2 border ${
+                    isSelected
+                      ? theme.activeTab
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-base">{theme.icon}</span>
+                  <span>{theme.name}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                    isSelected ? 'bg-white/20 text-white border-white/30' : theme.badge
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* GROUPED SUBJECT CATEGORY VIEW */}
+        {/* 1. AUTOMATIC GRADE & SUBJECT GROUPED VIEW (DEFAULT) */}
         {viewMode === 'grouped' && (
+          <div className="space-y-10 pt-2">
+            {Object.keys(gradeSubjectGroups).length === 0 ? (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+                <p className="text-sm font-bold text-slate-600">No books found matching the selected grade or subject filter.</p>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedGrade('All'); setSelectedSubjectTab('all'); }}
+                  className="px-4 py-2 bg-emerald-700 text-white font-bold text-xs rounded-xl hover:bg-emerald-800 transition cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              Object.entries(gradeSubjectGroups).map(([gradeName, subjectsMap]) => {
+                const totalGradeBooks = Object.values(subjectsMap).reduce((acc, list) => acc + list.length, 0);
+                if (totalGradeBooks === 0) return null;
+
+                return (
+                  <div key={gradeName} className="space-y-6 bg-slate-50/70 p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs">
+                    {/* GRADE HEADER BANNER */}
+                    <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
+                          <GraduationCap className="w-6 h-6 text-slate-950" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-white flex items-center gap-2">
+                            <span>{gradeName} Curriculum Books</span>
+                            <span className="text-xs font-black bg-emerald-500 text-slate-950 px-2.5 py-0.5 rounded-full">
+                              {totalGradeBooks} {totalGradeBooks === 1 ? 'Book' : 'Books'}
+                            </span>
+                          </h3>
+                          <p className="text-xs text-slate-300 font-medium mt-0.5">
+                            National CBC Curriculum • 4 Target Editions (Full Book, Teacher, Student, CAT)
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                        <span className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+                          {Object.keys(subjectsMap).length} Subjects Covered
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* SUBJECT SUB-SECTIONS IN THIS GRADE */}
+                    <div className="space-y-6 pl-0 sm:pl-2">
+                      {Object.entries(SUBJECT_THEMES).map(([subjectKey, theme]) => {
+                        const categoryBooks = subjectsMap[subjectKey] || [];
+                        if (categoryBooks.length === 0) return null;
+
+                        return (
+                          <div key={`${gradeName}-${subjectKey}`} className="space-y-3">
+                            {/* SUBJECT SUB-HEADER */}
+                            <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-2 ${theme.bgLight} border-slate-200`}>
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-xl">{theme.icon}</span>
+                                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                  <span>{gradeName} • {theme.name}</span>
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${theme.badge}`}>
+                                    {categoryBooks.length} {categoryBooks.length === 1 ? 'Module' : 'Modules'}
+                                  </span>
+                                </h4>
+                              </div>
+                            </div>
+
+                            {/* BOOKS CARDS GRID */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                              {categoryBooks.map((book) => {
+                                const key = getSubjectThemeKey(book.subject);
+                                const bookTheme = SUBJECT_THEMES[key] || SUBJECT_THEMES.general;
+
+                                return (
+                                  <div
+                                    key={book.id}
+                                    className={`bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-xl transition space-y-3 flex flex-col justify-between ${bookTheme.accentBar}`}
+                                  >
+                                    <div className="space-y-2.5">
+                                      <div className="flex justify-between items-start">
+                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${bookTheme.badge}`}>
+                                          {book.grade} • {book.subject}
+                                        </span>
+                                        <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                          <span>4.9</span>
+                                        </div>
+                                      </div>
+
+                                      <h4 className="font-extrabold text-sm text-slate-900 line-clamp-2">{book.title}</h4>
+                                      <p className="text-xs text-slate-500 font-medium">
+                                        Strand: <span className="font-bold text-slate-800">{book.strand}</span>
+                                      </p>
+
+                                      {/* Target Scope & Editions Breakdown Grid */}
+                                      <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                                        <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600">
+                                          <span className="uppercase tracking-wider">Target Scope & Editions:</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditionModalBook(book)}
+                                            className="text-emerald-700 hover:underline cursor-pointer"
+                                          >
+                                            Details →
+                                          </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                          {TARGET_EDITIONS.map((ed) => (
+                                            <button
+                                              key={ed.id}
+                                              type="button"
+                                              onClick={() => {
+                                                if (onOpenPurchase) {
+                                                  onOpenPurchase(book, ed.id);
+                                                } else {
+                                                  onSelectBook(book);
+                                                }
+                                              }}
+                                              className={`px-2 py-1 rounded-lg border text-left flex items-center justify-between transition cursor-pointer ${ed.border} hover:scale-102`}
+                                              title={`${ed.title}: ${ed.breakdown}`}
+                                            >
+                                              <span className="font-black text-slate-800 flex items-center gap-1 truncate">
+                                                <span>{ed.icon}</span>
+                                                <span className="truncate">{ed.title}</span>
+                                              </span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div className="text-[11px] text-slate-400 pt-1">
+                                        School: {book.branding?.schoolName}
+                                      </div>
+                                    </div>
+
+                                    <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => onSelectBook(book)}
+                                        className="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                                      >
+                                        <BookOpen className="w-3.5 h-3.5" />
+                                        <span>Open Book</span>
+                                      </button>
+                                      {onOpenPurchase && (
+                                        <button
+                                          type="button"
+                                          onClick={() => onOpenPurchase(book, 'Full Book')}
+                                          className="py-2 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                                          title="Purchase Access or STK Push Download"
+                                        >
+                                          <CreditCard className="w-3.5 h-3.5" />
+                                          <span>49 KES</span>
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          onSelectBook(book);
+                                          window.print();
+                                        }}
+                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition cursor-pointer"
+                                        title="Print or Export PDF"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* 2. GROUPED BY SUBJECT CATEGORY VIEW */}
+        {viewMode === 'subject' && (
           <div className="space-y-8">
             {Object.entries(SUBJECT_THEMES).map(([key, theme]) => {
               const categoryBooks = subjectGroups[key] || [];
@@ -517,6 +847,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setSelectedSubjectTab(key);
                         setViewMode('grid');
@@ -527,7 +858,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                     </button>
                   </div>
 
-                  {/* Books Grid under Category */}
+                  {/* Books Grid under Subject Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                     {categoryBooks.map((book) => {
                       return (
@@ -556,6 +887,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                               <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600">
                                 <span className="uppercase tracking-wider">Target Scope & Editions:</span>
                                 <button
+                                  type="button"
                                   onClick={() => setEditionModalBook(book)}
                                   className="text-emerald-700 hover:underline cursor-pointer"
                                 >
@@ -567,6 +899,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                                 {TARGET_EDITIONS.map((ed) => (
                                   <button
                                     key={ed.id}
+                                    type="button"
                                     onClick={() => {
                                       if (onOpenPurchase) {
                                         onOpenPurchase(book, ed.id);
@@ -593,6 +926,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
 
                           <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
                             <button
+                              type="button"
                               onClick={() => onSelectBook(book)}
                               className="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                             >
@@ -601,6 +935,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                             </button>
                             {onOpenPurchase && (
                               <button
+                                type="button"
                                 onClick={() => onOpenPurchase(book, 'Full Book')}
                                 className="py-2 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                                 title="Purchase Access or STK Push Download"
@@ -610,6 +945,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                               </button>
                             )}
                             <button
+                              type="button"
                               onClick={() => {
                                 onSelectBook(book);
                                 window.print();
@@ -630,17 +966,18 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
           </div>
         )}
 
-        {/* FLAT GRID VIEW */}
+        {/* 3. FLAT GRID VIEW */}
         {viewMode === 'grid' && (
           <div className="space-y-4">
             <div className="text-xs font-bold text-slate-500 flex items-center justify-between">
               <span>Showing {filteredBooks.length} books</span>
-              {selectedSubjectTab !== 'all' && (
+              {(selectedSubjectTab !== 'all' || selectedGrade !== 'All') && (
                 <button
-                  onClick={() => setSelectedSubjectTab('all')}
+                  type="button"
+                  onClick={() => { setSelectedSubjectTab('all'); setSelectedGrade('All'); }}
                   className="text-emerald-700 hover:underline font-extrabold"
                 >
-                  Clear Subject Filter
+                  Clear Filters
                 </button>
               )}
             </div>
@@ -676,6 +1013,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                         <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600">
                           <span className="uppercase tracking-wider">Target Scope & Editions:</span>
                           <button
+                            type="button"
                             onClick={() => setEditionModalBook(book)}
                             className="text-emerald-700 hover:underline cursor-pointer"
                           >
@@ -687,6 +1025,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
                           {TARGET_EDITIONS.map((ed) => (
                             <button
                               key={ed.id}
+                              type="button"
                               onClick={() => {
                                 if (onOpenPurchase) {
                                   onOpenPurchase(book, ed.id);
@@ -713,6 +1052,7 @@ export const LibraryHomeView: React.FC<LibraryHomeViewProps> = ({
 
                     <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => onSelectBook(book)}
                         className="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                       >

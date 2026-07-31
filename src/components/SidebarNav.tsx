@@ -18,35 +18,24 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const NAV_ITEMS = [
     { id: 'library', label: 'Book Store & Library', icon: <BookOpen className="w-4 h-4 text-emerald-600" /> },
-    { id: 'studio', label: 'AI Book Studio', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
     { id: 'search', label: 'Search Books', icon: <FileText className="w-4 h-4 text-blue-600" /> },
     { id: 'downloads', label: 'My Downloads', icon: <HardDriveDownload className="w-4 h-4 text-purple-600" />, badge: savedBooksCount },
-    { id: 'teacher', label: 'Teacher Portal', icon: <UserCheck className="w-4 h-4 text-indigo-600" /> },
   ];
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-16 lg:w-64 shrink-0 space-y-6 print:hidden transition-all duration-200">
       
-      {/* KES 49 Purchase & AI Generator CTA Banner */}
-      <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white p-2.5 lg:p-4 rounded-2xl border border-emerald-700 shadow-md space-y-3">
-        <div className="hidden lg:flex items-center gap-2">
-          <div className="p-2 bg-amber-400/20 text-amber-300 rounded-xl border border-amber-400/30 shrink-0">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+      {/* KES 49 Fixed Price Bookstore Banner */}
+      <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white p-3 lg:p-4 rounded-2xl border border-emerald-700 shadow-md space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-xl border border-emerald-400/30 shrink-0">
+            <BookOpen className="w-4 h-4 text-emerald-300" />
           </div>
           <div>
-            <h4 className="font-extrabold text-xs text-white">CBC Full Coursebook</h4>
-            <p className="text-[10px] text-amber-300 font-bold">Only KES 49 / Package</p>
+            <h4 className="font-extrabold text-xs text-white">ELIB Digital Store</h4>
+            <p className="text-[10px] text-amber-300 font-bold">Fixed KES 49 / Book</p>
           </div>
         </div>
-
-        <button
-          onClick={onOpenGenerator}
-          className="w-full py-2.5 px-2 lg:px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-          title="Generate & Buy CBC Coursebook (KES 49)"
-        >
-          <Sparkles className="w-4 h-4 text-slate-950 shrink-0" />
-          <span className="hidden lg:inline">Generate & Buy Book</span>
-        </button>
       </div>
 
       {/* Main Navigation Menu */}

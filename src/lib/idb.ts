@@ -1,8 +1,27 @@
 import { CBCFullBook } from '../types';
 
 const DB_NAME = 'EducationBrain_LibraryDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'books';
+const DRAFT_STORE_NAME = 'generator_drafts';
+
+export interface GeneratorDraftState {
+  id: string; // Default: 'current_draft'
+  generationMode: 'single' | 'batch';
+  activeTierId: string;
+  grade: string;
+  subject: string;
+  batchSubjectSelection: string[];
+  curriculumSystem: string;
+  bookCategory: string;
+  audience: string;
+  difficultyLevel: string;
+  topic: string;
+  strand?: string;
+  subStrand?: string;
+  savedAt: string;
+  updatedAtTimestamp: number;
+}
 
 /**
  * Open or initialize the IndexedDB connection.
@@ -23,6 +42,9 @@ export function openBookDB(): Promise<IDBDatabase> {
         store.createIndex('by_grade', 'grade', { unique: false });
         store.createIndex('by_subject', 'subject', { unique: false });
         store.createIndex('by_createdAt', 'createdAt', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) {
+        db.createObjectStore(DRAFT_STORE_NAME, { keyPath: 'id' });
       }
     };
 
@@ -140,3 +162,62 @@ export async function clearOfflineStorage(): Promise<void> {
     console.error('Failed to clear IndexedDB:', err);
   }
 }
+
+/**
+ * Save form draft state to IndexedDB.
+ */
+export async function saveGeneratorDraftToIDB(draft: GeneratorDraftState): Promise<void> {
+  try {
+    const db = await openBookDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(DRAFT_STORE_NAME);
+      const request = store.put(draft);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.warn('Failed to save draft to IndexedDB:', err);
+  }
+}
+
+/**
+ * Retrieve form draft state from IndexedDB.
+ */
+export async function getGeneratorDraftFromIDB(id: string = 'current_draft'): Promise<GeneratorDraftState | null> {
+  try {
+    const db = await openBookDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, 'readonly');
+      const store = transaction.objectStore(DRAFT_STORE_NAME);
+      const request = store.get(id);
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.warn('Failed to get draft from IndexedDB:', err);
+    return null;
+  }
+}
+
+/**
+ * Clear form draft state from IndexedDB.
+ */
+export async function clearGeneratorDraftFromIDB(id: string = 'current_draft'): Promise<void> {
+  try {
+    const db = await openBookDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(DRAFT_STORE_NAME);
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.warn('Failed to clear draft from IndexedDB:', err);
+  }
+}
+

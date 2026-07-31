@@ -813,7 +813,7 @@ A **budget** is an itemized financial plan that balances your **Income** (money 
           steps: [
             { phase: 'Introduction (5 mins)', teacherActivities: 'Sings a color song: "Red and Yellow, Blue and Green..."', learnerActivities: 'Sing along and clap hands to the rhythm.', assessmentStrategy: 'Observation of learner enthusiasm.' },
             { phase: 'Lesson Development (25 mins)', teacherActivities: 'Demonstrates sorting colored wooden blocks into matching buckets.', learnerActivities: 'Sort blocks in small play groups using red, yellow, and blue baskets.', assessmentStrategy: 'Checklist scoring for color recognition.' },
-            { phase: 'Conclusion (10 mins)', teacherActivities: 'Praises learners and displays drawings.', learnerActivities: 'Hold up their colored worksheets proudly.', assessmentStrategy: 'Visual inspection.' }
+            { phase: 'Conclusion & Reflection (10 mins)', teacherActivities: 'Praises learners and displays drawings.', learnerActivities: 'Hold up their colored worksheets proudly.', assessmentStrategy: 'Visual inspection.' }
           ],
           differentiationNotes: {
             fastLearners: 'Trace secondary colors (Orange & Green).',
@@ -892,9 +892,9 @@ If Juma has **3 apples** and Maria gives him **2 more apples**:
         lessonPlan: {
           learningResources: ['Bottle tops', 'Counting sticks', 'Number cards 1-100'],
           steps: [
-            { phase: 'Intro (5 mins)', teacherActivities: 'Asks learners to count their fingers and toes.', learnerActivities: 'Count aloud: 1, 2, 3... 10!', assessmentStrategy: 'Oral counting test.' },
-            { phase: 'Development (25 mins)', teacherActivities: 'Guides learners in bundling 10 bottle tops using rubber bands.', learnerActivities: 'Make 5 bundles of 10 counters each.', assessmentStrategy: 'Checklist evaluation.' },
-            { phase: 'Conclusion (10 mins)', teacherActivities: 'Reviews simple sums on the blackboard.', learnerActivities: 'Solve sums in exercise books.', assessmentStrategy: 'Workbook check.' }
+            { phase: 'Introduction (5 mins)', teacherActivities: 'Asks learners to count their fingers and toes.', learnerActivities: 'Count aloud: 1, 2, 3... 10!', assessmentStrategy: 'Oral counting test.' },
+            { phase: 'Lesson Development (25 mins)', teacherActivities: 'Guides learners in bundling 10 bottle tops using rubber bands.', learnerActivities: 'Make 5 bundles of 10 counters each.', assessmentStrategy: 'Checklist evaluation.' },
+            { phase: 'Conclusion & Reflection (10 mins)', teacherActivities: 'Reviews simple sums on the blackboard.', learnerActivities: 'Solve sums in exercise books.', assessmentStrategy: 'Workbook check.' }
           ],
           differentiationNotes: { fastLearners: 'Solve double-digit sums (e.g. 12 + 5).', slowLearners: 'Use finger counters for single digits up to 10.', specialNeeds: 'Provide tactile raised number cards.' }
         },
@@ -987,7 +987,7 @@ If Juma has **3 apples** and Maria gives him **2 more apples**:
           steps: [
             { phase: 'Introduction (5 mins)', teacherActivities: 'Presents a braking car video scenario. Asks learners: "Why does stopping distance increase quadratically with speed?"', learnerActivities: 'Analyze video, recall primary motion concepts, and write initial hypotheses.', assessmentStrategy: 'Diagnostic questioning.' },
             { phase: 'Lesson Development (25 mins)', teacherActivities: 'Demonstrates setup of ticker-timer and trolley along an inclined plane. Guides strip cutting and velocity calculation.', learnerActivities: 'In lab groups of 3, run trolley experiments, measure ticker tape intervals, plot $v-t$ graphs, and calculate acceleration $a$.', assessmentStrategy: 'Practical assessment rubric.' },
-            { phase: 'Conclusion (10 mins)', teacherActivities: 'Summarizes derivation of $s = ut + \\frac{1}{2}at^2$. Assigns numerical set.', learnerActivities: 'Present gradient calculation results and clean up lab benches.', assessmentStrategy: 'Numerical Problem Set Submission.' }
+            { phase: 'Conclusion & Reflection (10 mins)', teacherActivities: 'Summarizes derivation of $s = ut + \\frac{1}{2}at^2$. Assigns numerical set.', learnerActivities: 'Present gradient calculation results and clean up lab benches.', assessmentStrategy: 'Numerical Problem Set Submission.' }
           ],
           differentiationNotes: {
             fastLearners: 'Derive motion equations using calculus limits (integration).',
@@ -1114,7 +1114,7 @@ Ethanoic Acid + Ethanol $\\rightarrow$ **Ethyl Ethanoate (Sweet Fruity Ester)** 
           steps: [
             { phase: 'Introduction (5 mins)', teacherActivities: 'Passes around a fruit essence sample. Asks Grade 12 seniors: "Which chemical functional group produces this aroma?"', learnerActivities: 'Identify ester functional group and recall alkanol reactions.', assessmentStrategy: 'Diagnostic review.' },
             { phase: 'Lesson Development (25 mins)', teacherActivities: 'Demonstrates safe heating of ethanol, ethanoic acid, and conc. H2SO4 catalyst in a hot water bath.', learnerActivities: 'Conduct ester synthesis in pairs, pour mixture into sodium carbonate solution, and note fruity odor.', assessmentStrategy: 'Laboratory safety & practical checklist.' },
-            { phase: 'Conclusion (10 mins)', teacherActivities: 'Summarizes reaction equation and IUPAC naming.', learnerActivities: 'Draw reaction mechanisms in exercise books.', assessmentStrategy: 'Post-lab report audit.' }
+            { phase: 'Conclusion & Reflection (10 mins)', teacherActivities: 'Summarizes reaction equation and IUPAC naming.', learnerActivities: 'Draw reaction mechanisms in exercise books.', assessmentStrategy: 'Post-lab report audit.' }
           ],
           differentiationNotes: {
             fastLearners: 'Analyze 2nd order rate equations and activation energy ($E_a$) Arrhenius plots.',

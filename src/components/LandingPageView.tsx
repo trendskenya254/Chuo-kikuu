@@ -89,18 +89,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           {/* Quick CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs font-bold">
             <button
-              onClick={onOpenGenerator}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md transition flex items-center gap-1.5"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>AI Book Generator Studio</span>
-            </button>
-            <button
               onClick={() => onNavigateView('library')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition flex items-center gap-1.5"
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Browse Full Digital Library</span>
+              <span>Browse Full Digital Book Store</span>
             </button>
           </div>
 

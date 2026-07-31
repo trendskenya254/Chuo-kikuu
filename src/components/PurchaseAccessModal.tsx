@@ -287,8 +287,10 @@ export const PurchaseAccessModal: React.FC<PurchaseAccessModalProps> = ({
                   <button
                     key={edition.id}
                     type="button"
+                    aria-pressed={isSelected}
+                    aria-label={`Select ${edition.title}`}
                     onClick={() => setSelectedScope(edition.id)}
-                    className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between space-y-1 ${
+                    className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between space-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                       isSelected
                         ? edition.borderActive
                         : 'border-slate-200 hover:border-slate-300 bg-white'

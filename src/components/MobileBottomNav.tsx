@@ -10,14 +10,11 @@ interface MobileBottomNavProps {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeView,
   onNavigateView,
-  onOpenGenerator,
 }) => {
   const NAV_ITEMS = [
-    { id: 'landing', label: 'Home', icon: <Home className="w-5 h-5" /> },
-    { id: 'library', label: 'Library', icon: <BookOpen className="w-5 h-5" /> },
-    { id: 'studio', label: 'Studio', icon: <Sparkles className="w-5 h-5" />, isSpecial: true },
+    { id: 'library', label: 'Book Store', icon: <BookOpen className="w-5 h-5" /> },
     { id: 'search', label: 'Search', icon: <Search className="w-5 h-5" /> },
-    { id: 'downloads', label: 'Offline', icon: <HardDriveDownload className="w-5 h-5" /> },
+    { id: 'downloads', label: 'Downloads', icon: <HardDriveDownload className="w-5 h-5" /> },
   ];
 
   return (
@@ -25,24 +22,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <div className="flex items-center justify-around max-w-md mx-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = activeView === item.id;
-
-          if (item.isSpecial) {
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigateView('studio')}
-                className={`flex flex-col items-center justify-center p-2 rounded-2xl shadow-lg -mt-5 border-2 border-white transition-all transform active:scale-95 cursor-pointer ${
-                  isActive
-                    ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 font-black scale-105'
-                    : 'bg-emerald-700 text-white hover:bg-emerald-800'
-                }`}
-                title="AI Book Studio Generator"
-              >
-                <Sparkles className="w-5 h-5 text-amber-300" />
-                <span className="text-[9px] font-black uppercase tracking-tight mt-0.5 hidden xs:block">Studio</span>
-              </button>
-            );
-          }
 
           return (
             <button

@@ -39,7 +39,7 @@ export function generateInternalCBCBook(
     subStrand: subStrandName,
     topicPrompt: cleanTopic,
     targetAudience: scope,
-    difficultyLevel: targetGrade.includes('Grade 10') || targetGrade.includes('Grade 11') || targetGrade.includes('Grade 12') ? 'Advanced' : 'Standard',
+    difficultyLevel: targetGrade.includes('Grade 10') || targetGrade.includes('Grade 11') || targetGrade.includes('Grade 12') ? 'Enrichment' : 'Standard',
     createdAt: timestamp,
     branding: defaultBranding,
     teacherOverviewNotes: `Official ${targetGrade} ${targetSubject} CBC Module covering ${cleanTopic}. Formatted with timetabled 40-minute lesson plans, key inquiry questions, hands-on group practicals, and 4-tier assessment rubrics.`,

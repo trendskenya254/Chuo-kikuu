@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { BookOpen, UserCheck, GraduationCap, FileText, Printer, Award, Layers, Share2, Check, Download, FileCode, CheckSquare, Square, Eye, EyeOff, Maximize2, Minimize2, Tv, Highlighter, Link2, SlidersHorizontal, Sparkles, MessageSquare, CheckCircle, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { CBCFullBook } from '../types';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, UserCheck, GraduationCap, FileText, Printer, Award, Layers, Share2, Check, Download, FileCode, CheckSquare, Square, Eye, EyeOff, Maximize2, Minimize2, Tv, Highlighter, Link2, SlidersHorizontal, Sparkles, MessageSquare, CheckCircle, ChevronDown, MoreHorizontal, Clock, Lock, ShieldAlert, Zap, ArrowLeft, ShieldCheck, StickyNote, Star, X, Plus } from 'lucide-react';
+import { CBCFullBook, TargetAudience } from '../types';
 import { CoverPageView } from './CoverPageView';
 import { TeacherGuideView } from './TeacherGuideView';
 import { StudentTextbookView } from './StudentTextbookView';
@@ -12,6 +12,8 @@ import { TeacherStickyNotes, PageStickyOverlay } from './TeacherStickyNotes';
 import { AIProcessingProgress } from './AIProcessingProgress';
 import { DownloadPackageModal } from './DownloadPackageModal';
 import { downloadBookAsMarkdown, convertBookToMarkdown } from '../utils/markdownExporter';
+import { ALL_BOOK_PAGES, getReadingProgress, markPageAsViewed, calculateProgressPercentage, saveReadingProgress } from '../lib/readingProgress';
+import { PageNote, getBookNotes, addBookNote, deleteBookNote, clearBookNotes } from '../lib/pageNotes';
 
 interface BookViewerProps {
   book: CBCFullBook;
@@ -19,6 +21,10 @@ interface BookViewerProps {
   onPrint: () => void;
   isQueued?: boolean;
   onToggleQueue?: () => void;
+  onOpenPurchase?: (book: CBCFullBook, scope?: TargetAudience) => void;
+  onBackToLibrary?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (bookId: string) => void;
 }
 
 export type ActiveTab = 'all' | 'cover' | 'teacher' | 'student' | 'worksheets' | 'flashcards' | 'resources' | 'tracker';
@@ -29,6 +35,10 @@ export const BookViewer: React.FC<BookViewerProps> = ({
   onPrint,
   isQueued = false,
   onToggleQueue,
+  onOpenPurchase,
+  onBackToLibrary,
+  isFavorite = false,
+  onToggleFavorite,
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [copiedMd, setCopiedMd] = useState(false);
@@ -38,6 +48,138 @@ export const BookViewer: React.FC<BookViewerProps> = ({
   const [showProcessingBanner, setShowProcessingBanner] = useState(book.isProcessing ?? false);
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false);
+
+  // Accessible Font & Reader Controls
+  const [fontStyle, setFontStyle] = useState<'sans' | 'serif' | 'mono'>('sans');
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg' | 'xl'>('md');
+  const [isSimpleEnglishMode, setIsSimpleEnglishMode] = useState<boolean>(true);
+  const [isTopicsDrawerOpen, setIsTopicsDrawerOpen] = useState<boolean>(false);
+
+  // Visual Reading Progress & Page Viewed Tracker State
+  const [viewedPages, setViewedPages] = useState<string[]>(() => getReadingProgress(book.id));
+
+  // Teacher Page Annotations & Notes Sidebar State
+  const [isNotesSidebarOpen, setIsNotesSidebarOpen] = useState<boolean>(false);
+  const [pageNotes, setPageNotes] = useState<PageNote[]>(() => getBookNotes(book.id));
+  const [selectedNotePage, setSelectedNotePage] = useState<string>('Student Textbook');
+  const [newNoteText, setNewNoteText] = useState<string>('');
+  const [newNoteTeacher, setNewNoteTeacher] = useState<string>('Mwalimu J. Mwangi');
+
+  // Track page reading progress on mount or activeTab changes
+  useEffect(() => {
+    setViewedPages(getReadingProgress(book.id));
+    setPageNotes(getBookNotes(book.id));
+  }, [book.id]);
+
+  useEffect(() => {
+    if (activeTab === 'all') {
+      const allPages = ['cover', 'teacher', 'student', 'worksheets', 'rubrics'];
+      setViewedPages(allPages);
+      saveReadingProgress(book.id, allPages);
+    } else {
+      let pageId = activeTab;
+      if (['cover', 'teacher', 'student', 'worksheets', 'rubrics'].includes(pageId)) {
+        const updated = markPageAsViewed(book.id, pageId);
+        setViewedPages(updated);
+      }
+    }
+  }, [activeTab, book.id]);
+
+  const progressPercent = calculateProgressPercentage(viewedPages);
+
+  const handleAddNote = () => {
+    if (!newNoteText.trim()) return;
+    const updated = addBookNote(book.id, selectedNotePage, newNoteText, newNoteTeacher);
+    setPageNotes(updated);
+    setNewNoteText('');
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    const updated = deleteBookNote(book.id, noteId);
+    setPageNotes(updated);
+  };
+
+  const handleClearNotes = () => {
+    if (window.confirm('Are you sure you want to clear all teacher notes for this book?')) {
+      const updated = clearBookNotes(book.id);
+      setPageNotes(updated);
+    }
+  };
+
+  // User Session ID for Security Screen Capture Discouragement Overlay
+  const [sessionId] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'USER: michaelnyambumbogo@gmail.com • ID: KICD-SEC-94821';
+    let sid = sessionStorage.getItem('cbc_user_session_id');
+    if (!sid) {
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+      sid = `USER: michaelnyambumbogo@gmail.com • ID: KICD-SEC-${randomSuffix}`;
+      sessionStorage.setItem('cbc_user_session_id', sid);
+    }
+    return sid;
+  });
+
+  // 2-Minute Preview Lock & Purchase State
+  const [isPaid, setIsPaid] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem(`cbc_paid_book_${book.id}`);
+  });
+  const [previewSecondsLeft, setPreviewSecondsLeft] = useState<number>(120);
+  const [isPreviewLocked, setIsPreviewLocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkPaidStatus = () => {
+      const paid = !!localStorage.getItem(`cbc_paid_book_${book.id}`);
+      setIsPaid(paid);
+    };
+    checkPaidStatus();
+    window.addEventListener('storage', checkPaidStatus);
+    return () => window.removeEventListener('storage', checkPaidStatus);
+  }, [book.id]);
+
+  // 2-Minute (120s) Countdown timer for unpaid books
+  useEffect(() => {
+    if (isPaid) {
+      setIsPreviewLocked(false);
+      return;
+    }
+
+    setPreviewSecondsLeft(120);
+    setIsPreviewLocked(false);
+
+    const timer = setInterval(() => {
+      setPreviewSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsPreviewLocked(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [book.id, isPaid]);
+
+  // Anti-Copy & Keyboard Shortcut Trap (Preventing Unauthorized Copy/Screenshotting)
+  const handlePreventCopy = (e: React.SyntheticEvent) => {
+    if (!isPaid) {
+      e.preventDefault();
+      if (onOpenPurchase) {
+        onOpenPurchase(book);
+      }
+      return false;
+    }
+  };
+
+  const handleKeyDownTrap = (e: React.KeyboardEvent) => {
+    if (!isPaid) {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'p', 's', 'u', 'a'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        alert('This CBC Document is protected under DRM. Please purchase via M-Pesa STK Push to enable copying, downloading, and printing!');
+        if (onOpenPurchase) onOpenPurchase(book);
+      }
+    }
+  };
 
   // Section visibility state for real-time print preview customization
   const [sections, setSections] = useState({
@@ -88,13 +230,9 @@ export const BookViewer: React.FC<BookViewerProps> = ({
 
   const tabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
     { id: 'all', label: 'Full Printable Book', icon: <Printer className="w-4 h-4" /> },
-    { id: 'cover', label: 'Cover Page', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'teacher', label: 'Teacher Guide', icon: <UserCheck className="w-4 h-4" /> },
     { id: 'student', label: 'Student Textbook', icon: <GraduationCap className="w-4 h-4" /> },
     { id: 'worksheets', label: 'Worksheets & Quiz', icon: <Award className="w-4 h-4" /> },
-    { id: 'flashcards', label: 'Flashcards', icon: <Layers className="w-4 h-4" /> },
-    { id: 'resources', label: 'Resources & Drawings', icon: <Link2 className="w-4 h-4" /> },
-    { id: 'tracker', label: 'Progress & Remarks', icon: <FileText className="w-4 h-4" /> },
   ];
 
   const handleCopyMarkdown = () => {
@@ -143,6 +281,22 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         {/* Action Buttons */}
         <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0 font-sans">
           
+          {/* Favorite Toggle Button */}
+          {onToggleFavorite && (
+            <button
+              onClick={() => onToggleFavorite(book.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black rounded-xl border transition cursor-pointer ${
+                isFavorite
+                  ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+              }`}
+              title={isFavorite ? 'Remove from Starred Favorites' : 'Add to Starred Favorites'}
+            >
+              <Star className={`w-4 h-4 ${isFavorite ? 'text-amber-500 fill-amber-400' : 'text-slate-400'}`} />
+              <span className="hidden sm:inline">{isFavorite ? 'Starred' : 'Favorite'}</span>
+            </button>
+          )}
+
           {!isFocusMode && (
             <button
               onClick={() => setShowPackageModal(true)}
@@ -330,6 +484,150 @@ export const BookViewer: React.FC<BookViewerProps> = ({
 
       </div>
 
+      {/* READER ACCESSIBILITY & ENHANCED TOPIC CONTROLS STRIP */}
+      <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 shadow-md flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
+        
+        {/* Left: Font Selection & Font Size Buttons */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Font Style */}
+          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase px-2">Font:</span>
+            <button
+              onClick={() => setFontStyle('sans')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-sans font-bold transition cursor-pointer ${
+                fontStyle === 'sans' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Sans
+            </button>
+            <button
+              onClick={() => setFontStyle('serif')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-serif font-bold transition cursor-pointer ${
+                fontStyle === 'serif' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Serif
+            </button>
+            <button
+              onClick={() => setFontStyle('mono')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
+                fontStyle === 'mono' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Mono
+            </button>
+          </div>
+
+          {/* Font Size */}
+          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <span className="text-[10px] font-bold text-slate-400 uppercase px-2">Size:</span>
+            <button
+              onClick={() => setFontSize('sm')}
+              className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
+                fontSize === 'sm' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              A-
+            </button>
+            <button
+              onClick={() => setFontSize('md')}
+              className={`px-2 py-0.5 rounded text-xs font-bold transition cursor-pointer ${
+                fontSize === 'md' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Norm
+            </button>
+            <button
+              onClick={() => setFontSize('lg')}
+              className={`px-2 py-0.5 rounded text-sm font-bold transition cursor-pointer ${
+                fontSize === 'lg' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              A+
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Student Simple English Explanatory Mode & Topic Jumper Drawer Button */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Simple English Explanatory Mode Toggle */}
+          <button
+            onClick={() => setIsSimpleEnglishMode(!isSimpleEnglishMode)}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 border ${
+              isSimpleEnglishMode
+                ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+            }`}
+            title="Toggle simplified learner explanations and definitions"
+          >
+            <Sparkles className="w-3.5 h-3.5 fill-current" />
+            <span>💡 Student Simple English: {isSimpleEnglishMode ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* Topics Table of Contents Quick Jumper Button */}
+          <button
+            onClick={() => setIsTopicsDrawerOpen(!isTopicsDrawerOpen)}
+            className={`px-3 py-1.5 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1.5 border ${
+              isTopicsDrawerOpen
+                ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Topics & Contents</span>
+          </button>
+        </div>
+
+      </div>
+
+      {/* TOPIC QUICK JUMPER DRAWER MODAL */}
+      {isTopicsDrawerOpen && (
+        <div className="bg-slate-800 text-white p-5 rounded-2xl border border-slate-700 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150 print:hidden">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <h3 className="text-sm font-black text-white flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-400" />
+              <span>Book Topics & Table of Contents Quick Jumper</span>
+            </h3>
+            <button
+              onClick={() => setIsTopicsDrawerOpen(false)}
+              className="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            {book.chapters.map((ch, idx) => (
+              <div key={idx} className="bg-slate-900/90 p-3 rounded-xl border border-slate-700 space-y-2">
+                <div className="font-extrabold text-amber-300">
+                  Chapter {ch.chapterNumber}: {ch.title}
+                </div>
+                <div className="text-[11px] text-slate-300 space-y-1">
+                  <div>• Sub-strand: <strong>{ch.subStrand}</strong></div>
+                  <div>• {ch.keyInquiryQuestions?.length || 0} Key Inquiry Questions</div>
+                  <div>• {ch.textbookContent?.length || 0} Reading Sections</div>
+                  <div>• {ch.worksheetQuestions?.length || 0} Worksheet CAT Questions</div>
+                </div>
+                <div className="flex gap-1 pt-1">
+                  <button
+                    onClick={() => { setActiveTab('student'); setIsTopicsDrawerOpen(false); }}
+                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg transition flex-1 cursor-pointer"
+                  >
+                    Read Textbook
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('worksheets'); setIsTopicsDrawerOpen(false); }}
+                    className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-bold rounded-lg transition flex-1 cursor-pointer"
+                  >
+                    CAT Quiz
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI Post-Generation & Indexing Progress Banner */}
       {(showProcessingBanner || book.isProcessing) && (
         <AIProcessingProgress
@@ -452,10 +750,126 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         </div>
       )}
 
-      {/* Main Content Area based on Active Tab */}
-      <div className={`print-container transition-all ${
-        isFocusMode ? 'max-w-4xl mx-auto bg-white text-slate-900 p-8 md:p-14 rounded-3xl shadow-2xl border border-slate-200 font-serif leading-relaxed' : ''
-      } ${isHighlighterActive ? 'selection:bg-amber-300 selection:text-slate-950' : ''}`}>
+      {/* 2-Minute Free Sample Preview Countdown Banner */}
+      {!isPaid && !isPreviewLocked && (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 p-3 rounded-2xl shadow-md border border-amber-400 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold print:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 animate-pulse">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-black text-slate-950 uppercase tracking-wide">Free 2-Minute Review Mode:</span>{' '}
+              <span className="font-mono text-sm bg-slate-950 text-amber-300 px-2 py-0.5 rounded-lg border border-amber-400 font-black">
+                {Math.floor(previewSecondsLeft / 60)}:{(previewSecondsLeft % 60).toString().padStart(2, '0')}
+              </span>{' '}
+              <span className="text-slate-950 hidden sm:inline">remaining before preview locks.</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenPurchase && (
+              <button
+                onClick={() => onOpenPurchase(book)}
+                className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 text-xs font-black shadow transition flex items-center gap-1.5 cursor-pointer border border-amber-400/40"
+              >
+                <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                <span>Buy Now via M-Pesa (KES 49)</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area based on Active Tab OR Locked Screen */}
+      {isPreviewLocked && !isPaid ? (
+        <div className="rounded-3xl border border-slate-200 bg-white shadow-2xl p-8 sm:p-12 text-center space-y-6 animate-in fade-in zoom-in-95 duration-300 print:hidden my-8">
+          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-600 flex items-center justify-center mx-auto text-3xl shadow-inner">
+            <Lock className="w-10 h-10" />
+          </div>
+          
+          <div className="max-w-xl mx-auto space-y-3">
+            <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
+              <Clock className="w-3.5 h-3.5 text-amber-700" />
+              2-Minute Free Sample Review Expired
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Preview Time Limit Reached for "{book.title}"
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              You have completed your 2-minute free sample review of this official KICD Competency-Based Curriculum document. To unlock full reading access, complete schemes of work, timetabled lesson plans, student worksheets, and print/PDF export privileges, complete instant M-Pesa purchase.
+            </p>
+          </div>
+
+          {/* Pricing & Target Edition Selection preview card */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-w-lg mx-auto flex items-center justify-between text-left">
+            <div>
+              <span className="text-[11px] text-slate-500 font-extrabold block uppercase tracking-wide">Document Price</span>
+              <span className="text-xl font-black text-emerald-800">KES 49.00</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-black border border-emerald-300 inline-block">
+                M-Pesa STK Push
+              </span>
+              <span className="text-xs text-slate-500 block font-bold mt-0.5">Instant STK Prompt & Unlock</span>
+            </div>
+          </div>
+
+          {/* Primary Call-to-Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto pt-2">
+            {onOpenPurchase && (
+              <button
+                onClick={() => onOpenPurchase(book)}
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base shadow-xl transition flex items-center justify-center gap-2.5 cursor-pointer"
+              >
+                <Zap className="w-5 h-5 fill-amber-300 text-amber-300" />
+                <span>⚡ Buy Now via M-Pesa STK Push</span>
+              </button>
+            )}
+            {onBackToLibrary && (
+              <button
+                onClick={onBackToLibrary}
+                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-300 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Go Back to Library</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div 
+          onContextMenu={handlePreventCopy}
+          onCopy={handlePreventCopy}
+          onCut={handlePreventCopy}
+          onKeyDown={handleKeyDownTrap}
+          tabIndex={0}
+          className={`print-container transition-all relative ${
+            !isPaid ? 'select-none' : ''
+          } ${
+            isFocusMode ? 'max-w-4xl mx-auto bg-white text-slate-900 p-8 md:p-14 rounded-3xl shadow-2xl border border-slate-200 font-serif leading-relaxed' : ''
+          } ${isHighlighterActive ? 'selection:bg-amber-300 selection:text-slate-950' : ''}`}
+        >
+          {/* Semi-Transparent Repeating User & Session Security Watermark Overlay */}
+          <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden select-none opacity-10 flex flex-col justify-around py-12 rotate-[-20deg]">
+            {Array.from({ length: 14 }).map((_, idx) => (
+              <div key={idx} className="whitespace-nowrap font-mono text-xs sm:text-sm font-black tracking-widest text-slate-900 uppercase flex justify-between gap-12">
+                <span>{sessionId} • KICD CBC PROTECTED DOCUMENT</span>
+                <span>{sessionId} • KICD CBC PROTECTED DOCUMENT</span>
+                <span>{sessionId} • KICD CBC PROTECTED DOCUMENT</span>
+              </div>
+            ))}
+          </div>
+
+          {/* DRM Watermark Overlay for Unpaid Documents */}
+          {!isPaid && (
+            <div className="absolute inset-0 pointer-events-none z-30 opacity-15 flex items-center justify-center overflow-hidden rotate-[-25deg] select-none">
+              <div className="text-slate-900 text-2xl font-black uppercase tracking-widest text-center space-y-24">
+                <div>ELIB DIGITAL BOOKSTORE • KICD CBC PREVIEW • STRICTLY PROTECTED</div>
+                <div>2-MINUTE FREE PREVIEW MODE • BUY VIA M-PESA TO UNLOCK</div>
+                <div>ELIB DIGITAL BOOKSTORE • KICD CBC PREVIEW • STRICTLY PROTECTED</div>
+              </div>
+            </div>
+          )}
         
         {/* VIEW 1: FULL PRINTABLE BOOK (ALL SECTIONS STACKED WITH PRINT PAGE-BREAKS) */}
         {activeTab === 'all' && (
@@ -550,7 +964,12 @@ export const BookViewer: React.FC<BookViewerProps> = ({
             {sections.student && (
               <div className="relative page-break-after-always">
                 <PageStickyOverlay bookId={book.id} sectionName="Page 3 - Student Textbook" />
-                <StudentTextbookView book={book} />
+                <StudentTextbookView
+                  book={book}
+                  isSimpleEnglishMode={isSimpleEnglishMode}
+                  fontStyle={fontStyle}
+                  fontSize={fontSize}
+                />
               </div>
             )}
 
@@ -610,7 +1029,12 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         {activeTab === 'student' && (
           <div className="relative">
             <PageStickyOverlay bookId={book.id} sectionName="Page 3 - Student Textbook" />
-            <StudentTextbookView book={book} />
+            <StudentTextbookView
+              book={book}
+              isSimpleEnglishMode={isSimpleEnglishMode}
+              fontStyle={fontStyle}
+              fontSize={fontSize}
+            />
           </div>
         )}
         {activeTab === 'worksheets' && (
@@ -635,6 +1059,7 @@ export const BookViewer: React.FC<BookViewerProps> = ({
         )}
 
       </div>
+      )}
 
       {/* Target Book Scope & Edition Download Package Modal */}
       <DownloadPackageModal

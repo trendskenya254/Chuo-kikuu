@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Printer, Settings, Plus, Layers, GraduationCap, X, CheckSquare } from 'lucide-react';
+import { Search, Printer, Settings, Plus, Layers, GraduationCap, X, CheckSquare, Rocket, Sparkles } from 'lucide-react';
 import { CBCFullBook } from '../types';
 
 interface HeaderProps {
@@ -13,6 +13,7 @@ interface HeaderProps {
   onOpenPrintQueue: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  onOpenPackager?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPrintQueue,
   searchQuery,
   onSearchChange,
+  onOpenPackager,
 }) => {
   const filteredBooks = savedBooks.filter((book) => {
     if (!searchQuery.trim()) return true;
@@ -51,8 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base md:text-lg font-bold leading-none text-slate-800">
-                Curriculum Architect
+              <h1 className="text-base md:text-lg font-black tracking-tight leading-none text-slate-800 uppercase">
+                CBC ARCHITECT
               </h1>
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-semibold">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Kenya CBC Portal
@@ -104,33 +106,12 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           
           <button
-            onClick={onOpenPrintQueue}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
-              queuedBookIds.length > 0
-                ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-2xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-            }`}
-            title="Open Batch Print Queue Studio"
-          >
-            <CheckSquare className="w-4 h-4 text-blue-600" />
-            <span>Print Queue ({queuedBookIds.length})</span>
-          </button>
-
-          <button
             onClick={onOpenBranding}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer"
             title="Configure School Name & Branding"
           >
             <Settings className="w-3.5 h-3.5 text-slate-500" />
             <span className="hidden sm:inline">Branding</span>
-          </button>
-
-          <button
-            onClick={onOpenGenerator}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Material</span>
           </button>
 
           <button

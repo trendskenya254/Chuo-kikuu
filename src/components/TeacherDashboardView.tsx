@@ -29,17 +29,9 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
             Mwalimu Instructional Dashboard
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            Manage your generated curriculum books, schemes of work, topical CATs, and student assessment analytics.
+            Access curriculum books, schemes of work, topical CATs, and student assessment analytics.
           </p>
         </div>
-
-        <button
-          onClick={onOpenGenerator}
-          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition shrink-0 flex items-center gap-2"
-        >
-          <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>Generate New Lesson Book</span>
-        </button>
       </div>
 
       {/* Analytics Metric Cards */}

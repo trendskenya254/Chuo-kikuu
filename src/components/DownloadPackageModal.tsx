@@ -156,9 +156,12 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
               {/* Option 1: Full Book */}
-              <div
+              <button
+                type="button"
+                aria-pressed={selectedScope === 'full'}
+                aria-label="Select Full Book Scope"
                 onClick={() => setSelectedScope('full')}
-                className={`p-4 rounded-2xl border-2 transition cursor-pointer relative space-y-2 ${
+                className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer relative space-y-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                   selectedScope === 'full'
                     ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
@@ -178,12 +181,15 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
                 <p className="text-[11px] text-slate-500 leading-tight">
                   Complete 6-section coursebook with lesson plans, textbook content, worksheets, flashcards & rubrics.
                 </p>
-              </div>
+              </button>
 
               {/* Option 2: Teacher Edition */}
-              <div
+              <button
+                type="button"
+                aria-pressed={selectedScope === 'teacher'}
+                aria-label="Select Teacher Edition Scope"
                 onClick={() => setSelectedScope('teacher')}
-                className={`p-4 rounded-2xl border-2 transition cursor-pointer space-y-2 ${
+                className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer space-y-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                   selectedScope === 'teacher'
                     ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
@@ -203,12 +209,15 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
                 <p className="text-[11px] text-slate-500 leading-tight">
                   Curriculum matrix, timetabled 40-minute lesson plans, KIQs, and differentiated support.
                 </p>
-              </div>
+              </button>
 
               {/* Option 3: Student Edition */}
-              <div
+              <button
+                type="button"
+                aria-pressed={selectedScope === 'student'}
+                aria-label="Select Student Edition Scope"
                 onClick={() => setSelectedScope('student')}
-                className={`p-4 rounded-2xl border-2 transition cursor-pointer space-y-2 ${
+                className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer space-y-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   selectedScope === 'student'
                     ? 'border-indigo-500 bg-indigo-50/60 ring-2 ring-indigo-500/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
@@ -228,12 +237,15 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
                 <p className="text-[11px] text-slate-500 leading-tight">
                   In-depth explanatory readings, key vocabulary definitions, group practicals & CSL tasks.
                 </p>
-              </div>
+              </button>
 
               {/* Option 4: School Assessment */}
-              <div
+              <button
+                type="button"
+                aria-pressed={selectedScope === 'assessment'}
+                aria-label="Select School Assessment Scope"
                 onClick={() => setSelectedScope('assessment')}
-                className={`p-4 rounded-2xl border-2 transition cursor-pointer space-y-2 ${
+                className={`p-4 rounded-2xl border-2 text-left transition cursor-pointer space-y-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   selectedScope === 'assessment'
                     ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-500/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
@@ -253,7 +265,7 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
                 <p className="text-[11px] text-slate-500 leading-tight">
                   Formative CAT worksheets, master comprehension quiz, answer keys, and 4-tier rubrics.
                 </p>
-              </div>
+              </button>
 
             </div>
           </div>
@@ -330,10 +342,6 @@ export const DownloadPackageModal: React.FC<DownloadPackageModalProps> = ({
 
           {/* Download & Export Action Buttons */}
           <div className="space-y-3 pt-2">
-            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">
-              Download Format (Identical to UI Screen)
-            </h4>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               
               {/* Button 1: Download Rich HTML (Identical UI Layout) */}
